@@ -1,7 +1,7 @@
 // Service API pour communiquer avec le serveur 87.106.26.179
 import type { User, LoginRequest, AuthToken } from '../types/auth'
 
-const API_BASE_URL = 'http://87.106.26.179:5000/api' // À adapter selon le port réel
+const API_BASE_URL = '/lift-gmao/api'
 
 // Classe pour gérer les requêtes API
 export class ApiService {
