@@ -78,6 +78,22 @@ export function BEGammes() {
                     {g.configs.map(c => <span key={c} className={configPill(c)}>CONF {c}</span>)}
                     <span className="pill neutral">Ind. {g.revision}</span>
                   </div>
+                  {g.documents && g.documents.length > 0 && (
+                    <div className="gamme-docs">
+                      {g.documents.map(doc => (
+                        <a
+                          key={doc}
+                          className="gamme-doc-link"
+                          href={`${import.meta.env.BASE_URL}gammes/${encodeURIComponent(doc)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={e => e.stopPropagation()}
+                        >
+                          📑 {doc.replace('.pptx', '')}
+                        </a>
+                      ))}
+                    </div>
+                  )}
                 </article>
               ))}
             </div>
@@ -107,6 +123,26 @@ export function BEGammes() {
                     la {selected.section.toLowerCase()} du LIFT. Catégorie : {selected.category}.
                   </p>
                 </div>
+                {selected.documents && selected.documents.length > 0 && (
+                  <div className="detail-block">
+                    <h4>📎 Documents PowerPoint ({selected.documents.length})</h4>
+                    <div className="gamme-docs-detail">
+                      {selected.documents.map(doc => (
+                        <a
+                          key={doc}
+                          className="gamme-doc-link-detail"
+                          href={`${import.meta.env.BASE_URL}gammes/${encodeURIComponent(doc)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <span className="doc-icon">📑</span>
+                          <span className="doc-name">{doc.replace('.pptx', '')}</span>
+                          <span className="doc-download">↗</span>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </aside>
             )}
           </div>

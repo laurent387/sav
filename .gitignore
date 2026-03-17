@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Large binary files (deployed separately via SCP)
+public/gammes/*.pptx
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

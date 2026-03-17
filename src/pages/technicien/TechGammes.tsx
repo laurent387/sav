@@ -112,6 +112,21 @@ export function TechGammes() {
               <div className="gamme-configs">
                 {g.configs.map(c => <span key={c} className={configPill(c)}>CONF {c}</span>)}
               </div>
+              {g.documents && g.documents.length > 0 && (
+                <div className="gamme-docs">
+                  {g.documents.map(doc => (
+                    <a
+                      key={doc}
+                      className="gamme-doc-link"
+                      href={`${import.meta.env.BASE_URL}gammes/${encodeURIComponent(doc)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      📑 {doc.replace('.pptx', '')}
+                    </a>
+                  ))}
+                </div>
+              )}
             </article>
           ))}
         </div>

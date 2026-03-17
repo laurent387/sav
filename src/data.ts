@@ -94,6 +94,7 @@ export interface GammeAssemblage {
   configs: Configuration[]
   category: string
   revision: string
+  documents?: string[]
 }
 
 export interface PartAlert {
@@ -479,21 +480,21 @@ export const workOrders: WorkOrder[] = [
 ]
 
 export const gammes: GammeAssemblage[] = [
-  { id: 'PSF000000128', title: 'PARTIE FIXE LIFT', section: 'PARTIE FIXE', discipline: 'MECA', configs: ['F'], category: 'Structure', revision: 'H' },
-  { id: 'PSF000000129', title: 'PARTIE MOBILE LIFT', section: 'PARTIE MOBILE', discipline: 'MECA', configs: ['F'], category: 'Structure', revision: 'H' },
-  { id: 'PSF000000133', title: 'HANDRAIL DROIT', section: 'PARTIE MOBILE', discipline: 'MECA', configs: ['F'], category: 'Handrail', revision: 'H' },
-  { id: 'PSF000000134', title: 'HANDRAIL GAUCHE', section: 'PARTIE MOBILE', discipline: 'MECA', configs: ['F'], category: 'Handrail', revision: 'H' },
-  { id: 'PSF000000135', title: 'MOTORISATION Z', section: 'PARTIE MOBILE', discipline: 'MECA', configs: ['F'], category: 'Motorisation', revision: 'H' },
-  { id: 'PSF000000137', title: 'STRUCTURE RIVETEE FIXE', section: 'PARTIE FIXE', discipline: 'MECA', configs: ['F', 'G'], category: 'Structure rivetée', revision: 'H' },
-  { id: 'PSF000000138', title: 'STRUCTURE RIVETEE MOBILE ROTATION', section: 'PARTIE MOBILE', discipline: 'MECA', configs: ['F'], category: 'Structure rivetée', revision: 'H' },
-  { id: 'PSF000000139', title: 'STRUCTURE RIVETEE MOBILE LEVAGE', section: 'PARTIE MOBILE', discipline: 'MECA', configs: ['F'], category: 'Structure rivetée', revision: 'H' },
-  { id: 'PSF000000140', title: 'STRUCTURE RIVETEE DEMI LUNE', section: 'PARTIE MOBILE', discipline: 'MECA', configs: ['F', 'G', 'H'], category: 'Structure rivetée', revision: 'H' },
-  { id: 'PSF000000141', title: 'LININGS ET DEMI LUNES', section: 'PARTIE MOBILE', discipline: 'MECA', configs: ['F', 'H'], category: 'Linings', revision: 'H' },
-  { id: 'PSF000000314', title: 'MOTORISATION ROTATION', section: 'PARTIE FIXE', discipline: 'MECA', configs: ['F', 'G'], category: 'Motorisation', revision: 'H' },
+  { id: 'PSF000000128', title: 'PARTIE FIXE LIFT', section: 'PARTIE FIXE', discipline: 'MECA', configs: ['F'], category: 'Structure', revision: 'H', documents: ['Gamme assemblage CHASSIS FIXE CONF G.pptx', "Gamme d'assemblage Outillage P.FIXE.pptx", "RETROFIT E' - H  partie fixe.pptx"] },
+  { id: 'PSF000000129', title: 'PARTIE MOBILE LIFT', section: 'PARTIE MOBILE', discipline: 'MECA', configs: ['F'], category: 'Structure', revision: 'H', documents: ['GAMME MONTAGE BMP CONF F.pptx', 'GAMME MONTAGE BMP SUR PM CONF G.pptx', 'REGLAGE GALETS PARTIE MOBILE REV 2 CONF F.pptx'] },
+  { id: 'PSF000000133', title: 'HANDRAIL DROIT', section: 'PARTIE MOBILE', discipline: 'MECA', configs: ['F'], category: 'Handrail', revision: 'H', documents: ['GAMME MONTAGE  HANDRAIL +Pupitre CONF F.pptx'] },
+  { id: 'PSF000000134', title: 'HANDRAIL GAUCHE', section: 'PARTIE MOBILE', discipline: 'MECA', configs: ['F'], category: 'Handrail', revision: 'H', documents: ['GAMME MONTAGE  HANDRAIL +Pupitre CONF F.pptx'] },
+  { id: 'PSF000000135', title: 'MOTORISATION Z', section: 'PARTIE MOBILE', discipline: 'MECA', configs: ['F'], category: 'Motorisation', revision: 'H', documents: ['GAMME MONTAGE  MOTORISATION Z CONF F rev 2.pptx', 'GAMME MONTAGE MOTORISATION Z CONF F rev 0.pptx', 'Powerpoint Gamme-60Z-Assemblage MOTORISATION Z.pptx'] },
+  { id: 'PSF000000137', title: 'STRUCTURE RIVETEE FIXE', section: 'PARTIE FIXE', discipline: 'MECA', configs: ['F', 'G'], category: 'Structure rivetée', revision: 'H', documents: ["RETROFIT E' - H  partie fixe.pptx"] },
+  { id: 'PSF000000138', title: 'STRUCTURE RIVETEE MOBILE ROTATION', section: 'PARTIE MOBILE', discipline: 'MECA', configs: ['F'], category: 'Structure rivetée', revision: 'H', documents: ['ALSTOM Gamme-130-Assemblage STRUCTURE RIVETEE ROTATION.pptx', 'Gamme assemblage STRUCTURE RIVETEE ROTATION CONF F.pptx'] },
+  { id: 'PSF000000139', title: 'STRUCTURE RIVETEE MOBILE LEVAGE', section: 'PARTIE MOBILE', discipline: 'MECA', configs: ['F'], category: 'Structure rivetée', revision: 'H', documents: ['ALSTOM Gamme-200-Assemblage STRUCTURE RIVETEE LEVAGE.pptx', 'Gamme assemblage STRUCTURE RIVETEE LEVAGE CONF F.pptx', 'GAMME ASSEMBLAGE STRUCTURE LEVAGE DANS LA ROTATION CONF F.pptx'] },
+  { id: 'PSF000000140', title: 'STRUCTURE RIVETEE DEMI LUNE', section: 'PARTIE MOBILE', discipline: 'MECA', configs: ['F', 'G', 'H'], category: 'Structure rivetée', revision: 'H', documents: ['GAMME MONTAGE STRUCTURE RIVETEE DEMI LUNES CONF F.pptx'] },
+  { id: 'PSF000000141', title: 'LININGS ET DEMI LUNES', section: 'PARTIE MOBILE', discipline: 'MECA', configs: ['F', 'H'], category: 'Linings', revision: 'H', documents: ['GAMME PREPARATION LINING  CONF H.pptx', 'GAMME RETROFIT LINING CONF F VERS CONF G.pptx'] },
+  { id: 'PSF000000314', title: 'MOTORISATION ROTATION', section: 'PARTIE FIXE', discipline: 'MECA', configs: ['F', 'G'], category: 'Motorisation', revision: 'H', documents: ['GAMME MONTAGE MOTORISATION R CONF F.pptx', 'GAMME MONTAGE MOTORISATION R DANS PARTIE MOBILE CON F.pptx', 'Powerpoint Gamme-60R-ASSEMBLAGE MOTORISATION R.pptx'] },
   { id: 'PSF000000132', title: 'COFFRET PUISSANCE', section: 'PARTIE FIXE', discipline: 'ELEC', configs: ['F'], category: 'Coffret', revision: 'H' },
   { id: 'PSF000000136', title: 'COFFRET AUTOMATE', section: 'PARTIE FIXE', discipline: 'ELEC', configs: ['F'], category: 'Coffret', revision: 'H' },
   { id: 'PSF000000131', title: 'COFFRET EMBARQUE', section: 'PARTIE MOBILE', discipline: 'ELEC', configs: ['F'], category: 'Coffret', revision: 'H' },
-  { id: 'PSF000000434', title: 'GOULOTTE PARTIE FIXE', section: 'PARTIE FIXE', discipline: 'ELEC', configs: ['F', 'G'], category: 'Câblage', revision: 'H' },
+  { id: 'PSF000000434', title: 'GOULOTTE PARTIE FIXE', section: 'PARTIE FIXE', discipline: 'ELEC', configs: ['F', 'G'], category: 'Câblage', revision: 'H', documents: ['MONTAGE Goulotte lift alstom CONF G.pptx'] },
   { id: 'PSF000000319', title: 'BORNIER COFFRET AUTOMATE', section: 'PARTIE FIXE', discipline: 'ELEC', configs: ['F'], category: 'Câblage', revision: 'H' },
   { id: 'PSF000000320', title: 'BORNIER COFFRET PUISSANCE', section: 'PARTIE FIXE', discipline: 'ELEC', configs: ['F'], category: 'Câblage', revision: 'H' },
   { id: 'PSF000000321', title: 'BORNIER COFFRET EMBARQUE', section: 'PARTIE MOBILE', discipline: 'ELEC', configs: ['F'], category: 'Câblage', revision: 'H' },
@@ -502,8 +503,8 @@ export const gammes: GammeAssemblage[] = [
   { id: 'PSF000000424', title: 'HARNAIS W001 W002 W004', section: 'PARTIE FIXE', discipline: 'ELEC', configs: ['F'], category: 'Harnais', revision: 'H' },
   { id: 'PSF000000345', title: 'HARNAIS PM W105', section: 'PARTIE MOBILE', discipline: 'ELEC', configs: ['F'], category: 'Harnais', revision: 'H' },
   { id: 'PSF000000387', title: 'HARNAIS PM W147', section: 'PARTIE MOBILE', discipline: 'ELEC', configs: ['F'], category: 'Harnais', revision: 'H' },
-  { id: 'PSF000000432', title: 'TOLE PUPITRE GAUCHE', section: 'PARTIE MOBILE', discipline: 'ELEC', configs: ['F'], category: 'Pupitre', revision: 'H' },
-  { id: 'PSF000000433', title: 'TOLE PUPITRE DROIT', section: 'PARTIE MOBILE', discipline: 'ELEC', configs: ['F'], category: 'Pupitre', revision: 'H' },
+  { id: 'PSF000000432', title: 'TOLE PUPITRE GAUCHE', section: 'PARTIE MOBILE', discipline: 'ELEC', configs: ['F'], category: 'Pupitre', revision: 'H', documents: ['GAMME MONTAGE  HANDRAIL +Pupitre CONF F.pptx'] },
+  { id: 'PSF000000433', title: 'TOLE PUPITRE DROIT', section: 'PARTIE MOBILE', discipline: 'ELEC', configs: ['F'], category: 'Pupitre', revision: 'H', documents: ['GAMME MONTAGE  HANDRAIL +Pupitre CONF F.pptx'] },
 ]
 
 export const partsAlerts: PartAlert[] = [
