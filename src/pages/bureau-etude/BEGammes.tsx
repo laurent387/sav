@@ -1,8 +1,8 @@
 import { startTransition, useDeferredValue, useState } from 'react'
 import {
-  gammes, retrofitOperations,
   type Configuration, type Section, type Discipline,
 } from '../../data'
+import { useGmaoData } from '../../contexts/DataContext'
 
 function configPill(c: Configuration) {
   const map: Record<Configuration, string> = {
@@ -12,6 +12,7 @@ function configPill(c: Configuration) {
 }
 
 export function BEGammes() {
+  const { gammes, retrofitOperations } = useGmaoData()
   const [section, setSection] = useState<'Toutes' | Section>('Toutes')
   const [discipline, setDiscipline] = useState<'Toutes' | Discipline>('Toutes')
   const [search, setSearch] = useState('')

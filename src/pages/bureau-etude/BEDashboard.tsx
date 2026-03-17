@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import {
-  liftUnits, workOrders, gammes, fncs, partsAlerts,
   type Configuration,
 } from '../../data'
+import { useGmaoData } from '../../contexts/DataContext'
 
 function configPill(c: Configuration) {
   const map: Record<Configuration, string> = {
@@ -12,6 +12,7 @@ function configPill(c: Configuration) {
 }
 
 export function BEDashboard() {
+  const { liftUnits, workOrders, gammes, fncs, partsAlerts } = useGmaoData()
   const [_] = useState(0)
   void _
   const unitsEnRetrofit = liftUnits.filter(u => u.status === 'en-retrofit').length

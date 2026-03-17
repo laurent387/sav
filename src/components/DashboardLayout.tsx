@@ -1,6 +1,7 @@
 import { type ReactNode, useState } from 'react'
 import type { User } from '../types/auth'
-import { workOrders, fncs, partsAlerts } from '../data'
+import type { WorkOrder, FNC, PartAlert } from '../data'
+import { useGmaoData } from '../contexts/DataContext'
 
 interface LayoutProps {
   user: User
@@ -11,7 +12,7 @@ interface LayoutProps {
   children: ReactNode
 }
 
-function buildNotifications() {
+function buildNotifications(workOrders: WorkOrder[], fncs: FNC[], partsAlerts: PartAlert[]) {
   const notifs: { id: string; icon: string; text: string; type: 'danger' | 'warning' | 'info' }[] = []
   const today = new Date()
 
@@ -44,8 +45,9 @@ function buildNotifications() {
 }
 
 export function DashboardLayout({ user, onLogout, menuItems, activeMenu, onMenuChange, children }: LayoutProps) {
+  const { workOrders, fncs, partsAlerts } = useGmaoData()
   const [showNotifs, setShowNotifs] = useState(false)
-  const notifications = buildNotifications()
+  const notifications = buildNotifications(workOrders, fncs, partsAlerts)
   const notifCount = notifications.length
   const roleLabel: Record<string, string> = {
     admin: 'Administrateur',

@@ -1,6 +1,7 @@
-import { liftUnits, workOrders, partsAlerts, retrofitOperations } from '../../data'
+import { useGmaoData } from '../../contexts/DataContext'
 
 export function LogDashboard() {
+  const { liftUnits, workOrders, partsAlerts, retrofitOperations } = useGmaoData()
   const unitsEnRetrofit = liftUnits.filter(u => u.status === 'en-retrofit').length
   const activeOTs = workOrders.filter(o => o.status === 'en-cours' || o.status === 'planifie').length
   const criticalAlerts = partsAlerts.filter(p => p.stockActuel === 0).length

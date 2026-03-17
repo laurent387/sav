@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import {
-  liftUnits, workOrders, technicians, fncs, gammes, partsAlerts,
   type Configuration,
 } from '../../data'
+import { useGmaoData } from '../../contexts/DataContext'
 
 function configPill(c: Configuration) {
   const map: Record<Configuration, string> = {
@@ -62,6 +62,7 @@ function BarChart({ bars }: { bars: { label: string; value: number; max: number;
 }
 
 export function AdminDashboard() {
+  const { liftUnits, workOrders, technicians, fncs, gammes, partsAlerts } = useGmaoData()
   const [period] = useState<'jour' | 'semaine' | 'mois'>('semaine')
   const unitsEnRetrofit = liftUnits.filter(u => u.status === 'en-retrofit').length
   const unitsOperational = liftUnits.filter(u => u.status === 'operational').length

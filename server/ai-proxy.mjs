@@ -1,10 +1,15 @@
 import { createServer } from 'node:http'
 import { randomUUID } from 'node:crypto'
+import {
+  DEFAULT_GAMMES_OUTPUT_DIR,
+  searchGammesKnowledgeBase,
+} from './gammes-kb.mjs'
 
 const PORT = Number(process.env.AI_BACKEND_PORT || 8787)
 const ALLOWED_ORIGIN = process.env.AI_BACKEND_ALLOWED_ORIGIN || '*'
 const FLOWISE_BASE_URL = stripTrailingSlash(process.env.FLOWISE_BASE_URL || 'http://192.168.1.77:3002')
 const FLOWISE_CHATFLOW_ID = process.env.FLOWISE_CHATFLOW_ID || ''
+const FLOWISE_GAMMES_CHATFLOW_ID = process.env.FLOWISE_GAMMES_CHATFLOW_ID || FLOWISE_CHATFLOW_ID
 const FLOWISE_API_KEY = process.env.FLOWISE_API_KEY || ''
 const MAX_BODY_SIZE = 1024 * 1024
 
@@ -36,7 +41,7 @@ function safeJsonParse(value) {
 }
 
 function extractJsonBlock(text) {
-  const trimmed = text.trim()
+  const trimmed = String(text || '').trim()
   const direct = safeJsonParse(trimmed)
   if (direct) return direct
 
@@ -61,73 +66,6 @@ function normalizeArray(value) {
 
 function normalizeObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value) ? value : null
-}
-
-function buildPrompt(payload) {
-  const {
-    question,
-    unit,
-    history,
-    workOrders,
-    documents,
-    technicianNotes,
-  } = payload
-
-  const safeUnit = normalizeObject(unit)
-  const safeHistory = normalizeArray(history)
-  const safeWorkOrders = normalizeArray(workOrders)
-  const safeDocuments = normalizeArray(documents)
-  const safeNotes = typeof technicianNotes === 'string' ? technicianNotes.trim() : ''
-
-  return [
-    'Tu es un assistant GMAO LIFT spécialisé en analyse d’historique unité.',
-    'Réponds uniquement à partir du contexte fourni ci-dessous.',
-    'Si une information manque, dis-le explicitement.',
-    'Ne fabrique ni diagnostic certain, ni pièce, ni étape inexistante.',
-    'Ta sortie doit être un JSON strict, sans markdown, avec cette forme :',
-    '{"summary":"","probable_causes":[],"checks":[],"parts_to_review":[],"recommended_action":"","fnc_draft":"","confidence":"low|medium|high"}',
-    '',
-    'QUESTION UTILISATEUR :',
-    question,
-    '',
-    'UNITÉ :',
-    JSON.stringify(safeUnit, null, 2),
-    '',
-    'HISTORIQUE :',
-    JSON.stringify(safeHistory, null, 2),
-    '',
-    'ORDRES DE TRAVAIL :',
-    JSON.stringify(safeWorkOrders, null, 2),
-    '',
-    'DOCUMENTS ASSOCIÉS :',
-    JSON.stringify(safeDocuments, null, 2),
-    '',
-    'NOTES TECHNICIEN :',
-    safeNotes || 'Aucune note complémentaire.',
-  ].join('\n')
-}
-
-function extractAnswerText(flowisePayload) {
-  if (typeof flowisePayload === 'string') return flowisePayload
-  if (!flowisePayload || typeof flowisePayload !== 'object') {
-    return JSON.stringify(flowisePayload ?? null)
-  }
-
-  const candidates = [
-    flowisePayload.text,
-    flowisePayload.answer,
-    flowisePayload.response,
-    flowisePayload.message,
-    flowisePayload.output,
-  ]
-
-  for (const candidate of candidates) {
-    if (typeof candidate === 'string' && candidate.trim()) {
-      return candidate
-    }
-  }
-
-  return JSON.stringify(flowisePayload)
 }
 
 async function readJsonBody(request) {
@@ -158,16 +96,108 @@ async function readJsonBody(request) {
   })
 }
 
-function validateAnalyzePayload(payload) {
+function validateQuestionPayload(payload) {
   if (typeof payload.question !== 'string' || !payload.question.trim()) {
     return 'Le champ "question" est obligatoire.'
   }
   return null
 }
 
-async function callFlowise(prompt, sessionId) {
-  if (!FLOWISE_CHATFLOW_ID) {
-    throw new Error('FLOWISE_CHATFLOW_ID is not configured')
+function buildUnitHistoryPrompt(payload) {
+  const safeUnit = normalizeObject(payload.unit)
+  const safeHistory = normalizeArray(payload.history)
+  const safeWorkOrders = normalizeArray(payload.workOrders)
+  const safeDocuments = normalizeArray(payload.documents)
+  const safeNotes = typeof payload.technicianNotes === 'string' ? payload.technicianNotes.trim() : ''
+
+  return [
+    'Tu es un assistant GMAO LIFT specialise en analyse d historique unite.',
+    'Reponds uniquement a partir du contexte fourni ci-dessous.',
+    'Si une information manque, dis-le explicitement.',
+    'Ne fabrique ni diagnostic certain, ni piece, ni etape inexistante.',
+    'Ta sortie doit etre un JSON strict, sans markdown, avec cette forme :',
+    '{"summary":"","probable_causes":[],"checks":[],"parts_to_review":[],"recommended_action":"","fnc_draft":"","confidence":"low|medium|high"}',
+    '',
+    'QUESTION UTILISATEUR :',
+    payload.question,
+    '',
+    'UNITE :',
+    JSON.stringify(safeUnit, null, 2),
+    '',
+    'HISTORIQUE :',
+    JSON.stringify(safeHistory, null, 2),
+    '',
+    'ORDRES DE TRAVAIL :',
+    JSON.stringify(safeWorkOrders, null, 2),
+    '',
+    'DOCUMENTS ASSOCIES :',
+    JSON.stringify(safeDocuments, null, 2),
+    '',
+    'NOTES TECHNICIEN :',
+    safeNotes || 'Aucune note complementaire.',
+  ].join('\n')
+}
+
+function buildGammesPrompt(payload, retrieval) {
+  const topChunks = retrieval.chunks.map((chunk) => ({
+    source: chunk.metadata?.relativePath,
+    title: chunk.metadata?.title,
+    section: chunk.metadata?.section,
+    discipline: chunk.metadata?.discipline,
+    configs: chunk.metadata?.configs,
+    segment: chunk.segmentLabel,
+    text: chunk.text,
+  }))
+
+  return [
+    'Tu es un assistant GMAO LIFT specialise dans les gammes et documents techniques.',
+    'Reponds uniquement a partir du contexte de gammes fourni.',
+    'Si la reponse n est pas presente dans les documents, dis le clairement.',
+    'Ne melange pas plusieurs configurations si le contexte est ambigu.',
+    'Ta sortie doit etre un JSON strict, sans markdown, avec cette forme :',
+    '{"answer":"","sources":[],"warnings":[],"confidence":"low|medium|high"}',
+    '',
+    'QUESTION UTILISATEUR :',
+    payload.question,
+    '',
+    'FILTRES :',
+    JSON.stringify({
+      configuration: payload.configuration || null,
+      section: payload.section || null,
+      discipline: payload.discipline || null,
+    }, null, 2),
+    '',
+    'EXTRAITS DE GAMMES :',
+    JSON.stringify(topChunks, null, 2),
+  ].join('\n')
+}
+
+function extractAnswerText(flowisePayload) {
+  if (typeof flowisePayload === 'string') return flowisePayload
+  if (!flowisePayload || typeof flowisePayload !== 'object') {
+    return JSON.stringify(flowisePayload ?? null)
+  }
+
+  const candidates = [
+    flowisePayload.text,
+    flowisePayload.answer,
+    flowisePayload.response,
+    flowisePayload.message,
+    flowisePayload.output,
+  ]
+
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && candidate.trim()) {
+      return candidate
+    }
+  }
+
+  return JSON.stringify(flowisePayload)
+}
+
+async function callFlowise(prompt, sessionId, chatflowId) {
+  if (!chatflowId) {
+    throw new Error('Flowise chatflow is not configured')
   }
 
   const headers = {
@@ -179,7 +209,7 @@ async function callFlowise(prompt, sessionId) {
   }
 
   const response = await fetch(
-    `${FLOWISE_BASE_URL}/api/v1/prediction/${FLOWISE_CHATFLOW_ID}`,
+    `${FLOWISE_BASE_URL}/api/v1/prediction/${chatflowId}`,
     {
       method: 'POST',
       headers,
@@ -196,11 +226,7 @@ async function callFlowise(prompt, sessionId) {
   const parsed = safeJsonParse(raw) ?? raw
 
   if (!response.ok) {
-    const message =
-      typeof parsed === 'string'
-        ? parsed
-        : JSON.stringify(parsed)
-
+    const message = typeof parsed === 'string' ? parsed : JSON.stringify(parsed)
     throw new Error(`Flowise error ${response.status}: ${message}`)
   }
 
@@ -222,7 +248,9 @@ const server = createServer(async (request, response) => {
       ok: true,
       service: 'ai-proxy',
       flowiseConfigured: Boolean(FLOWISE_CHATFLOW_ID),
+      flowiseGammesConfigured: Boolean(FLOWISE_GAMMES_CHATFLOW_ID),
       flowiseBaseUrl: FLOWISE_BASE_URL,
+      gammesOutputDir: DEFAULT_GAMMES_OUTPUT_DIR,
     })
     return
   }
@@ -230,7 +258,7 @@ const server = createServer(async (request, response) => {
   if (request.method === 'POST' && requestUrl.pathname === '/api/ai/unit-history/analyze') {
     try {
       const payload = await readJsonBody(request)
-      const validationError = validateAnalyzePayload(payload)
+      const validationError = validateQuestionPayload(payload)
 
       if (validationError) {
         sendJson(response, 400, {
@@ -245,8 +273,8 @@ const server = createServer(async (request, response) => {
           ? payload.sessionId.trim()
           : randomUUID()
 
-      const prompt = buildPrompt(payload)
-      const flowisePayload = await callFlowise(prompt, sessionId)
+      const prompt = buildUnitHistoryPrompt(payload)
+      const flowisePayload = await callFlowise(prompt, sessionId, FLOWISE_CHATFLOW_ID)
       const answer = extractAnswerText(flowisePayload)
       const structured = extractJsonBlock(answer)
 
@@ -265,6 +293,107 @@ const server = createServer(async (request, response) => {
     return
   }
 
+  if (request.method === 'POST' && requestUrl.pathname === '/api/ai/gammes/search') {
+    try {
+      const payload = await readJsonBody(request)
+      const validationError = validateQuestionPayload(payload)
+
+      if (validationError) {
+        sendJson(response, 400, {
+          ok: false,
+          error: validationError,
+        })
+        return
+      }
+
+      const retrieval = await searchGammesKnowledgeBase({
+        question: payload.question,
+        configuration: payload.configuration,
+        section: payload.section,
+        discipline: payload.discipline,
+        limit: Number(payload.limit || 8),
+      })
+
+      sendJson(response, 200, {
+        ok: true,
+        documents: retrieval.documents,
+        chunks: retrieval.chunks,
+        manifest: retrieval.manifest,
+      })
+    } catch (error) {
+      sendJson(response, 500, {
+        ok: false,
+        error: error instanceof Error ? error.message : 'Unable to search gammes knowledge base',
+      })
+    }
+    return
+  }
+
+  if (request.method === 'POST' && requestUrl.pathname === '/api/ai/gammes/ask') {
+    try {
+      const payload = await readJsonBody(request)
+      const validationError = validateQuestionPayload(payload)
+
+      if (validationError) {
+        sendJson(response, 400, {
+          ok: false,
+          error: validationError,
+        })
+        return
+      }
+
+      const retrieval = await searchGammesKnowledgeBase({
+        question: payload.question,
+        configuration: payload.configuration,
+        section: payload.section,
+        discipline: payload.discipline,
+        limit: Number(payload.limit || 8),
+      })
+
+      const sessionId =
+        typeof payload.sessionId === 'string' && payload.sessionId.trim()
+          ? payload.sessionId.trim()
+          : randomUUID()
+
+      if (!FLOWISE_GAMMES_CHATFLOW_ID) {
+        sendJson(response, 200, {
+          ok: true,
+          ready: false,
+          sessionId,
+          answer: null,
+          structured: null,
+          documents: retrieval.documents,
+          chunks: retrieval.chunks,
+          manifest: retrieval.manifest,
+          warning: 'FLOWISE_GAMMES_CHATFLOW_ID is not configured',
+        })
+        return
+      }
+
+      const prompt = buildGammesPrompt(payload, retrieval)
+      const flowisePayload = await callFlowise(prompt, sessionId, FLOWISE_GAMMES_CHATFLOW_ID)
+      const answer = extractAnswerText(flowisePayload)
+      const structured = extractJsonBlock(answer)
+
+      sendJson(response, 200, {
+        ok: true,
+        ready: true,
+        sessionId,
+        answer,
+        structured,
+        documents: retrieval.documents,
+        chunks: retrieval.chunks,
+        manifest: retrieval.manifest,
+      })
+    } catch (error) {
+      sendJson(response, 500, {
+        ok: false,
+        error: error instanceof Error ? error.message : 'Unable to ask gammes assistant',
+      })
+    }
+    return
+  }
+
   sendJson(response, 404, {
     ok: false,
     error: 'Route not found',
@@ -274,7 +403,7 @@ const server = createServer(async (request, response) => {
 server.listen(PORT, () => {
   console.log(`[ai-proxy] listening on http://localhost:${PORT}`)
   console.log(`[ai-proxy] Flowise base URL: ${FLOWISE_BASE_URL}`)
-  console.log(
-    `[ai-proxy] Chatflow configured: ${FLOWISE_CHATFLOW_ID ? 'yes' : 'no'}`,
-  )
+  console.log(`[ai-proxy] Chatflow configured: ${FLOWISE_CHATFLOW_ID ? 'yes' : 'no'}`)
+  console.log(`[ai-proxy] Gammes chatflow configured: ${FLOWISE_GAMMES_CHATFLOW_ID ? 'yes' : 'no'}`)
+  console.log(`[ai-proxy] Gammes KB dir: ${DEFAULT_GAMMES_OUTPUT_DIR}`)
 })

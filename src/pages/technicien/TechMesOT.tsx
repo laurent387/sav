@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Modal } from '../../components/Modal'
 import {
-  workOrders as initialWorkOrders, retrofitOperations, technicians, liftUnits,
   type OpStatus, type OTStatus, type Configuration,
 } from '../../data'
+import { useGmaoData } from '../../contexts/DataContext'
 
 function opStatusLabel(s: OpStatus) {
   const map: Record<OpStatus, string> = {
@@ -32,6 +32,7 @@ interface Props {
 }
 
 export function TechMesOT({ technicianId }: Props) {
+  const { workOrders: initialWorkOrders, retrofitOperations, technicians, liftUnits } = useGmaoData()
   const [workOrders, setWorkOrders] = useState(initialWorkOrders)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [showOpDetail, setShowOpDetail] = useState<string | null>(null)

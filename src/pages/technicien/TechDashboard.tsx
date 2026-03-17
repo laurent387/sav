@@ -1,4 +1,5 @@
-import { workOrders, technicians, retrofitOperations, type Configuration } from '../../data'
+import { type Configuration } from '../../data'
+import { useGmaoData } from '../../contexts/DataContext'
 
 function configPill(c: Configuration) {
   const map: Record<Configuration, string> = {
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export function TechDashboard({ technicianId }: Props) {
+  const { workOrders, technicians, retrofitOperations } = useGmaoData()
   const tech = technicians.find(t => t.id === technicianId)
   const myOTs = workOrders.filter(o => o.technicianIds.includes(technicianId))
   const activeOTs = myOTs.filter(o => o.status === 'en-cours')

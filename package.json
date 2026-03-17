@@ -9,11 +9,19 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "ai:server": "node server/ai-proxy.mjs",
-    "ai:server:dev": "node --watch server/ai-proxy.mjs"
+    "ai:server:dev": "node --watch server/ai-proxy.mjs",
+    "gammes:build": "node server/build-gammes-kb.mjs",
+    "api:server": "node server/api.mjs",
+    "api:server:dev": "node --watch server/api.mjs",
+    "db:schema": "psql -d lift_gmao -f server/db/schema.sql",
+    "db:seed": "node server/db/seed.mjs"
   },
   "dependencies": {
+    "pdf.js-extract": "^0.2.1",
+    "pg": "^8.20.0",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "unzipper": "^0.12.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",

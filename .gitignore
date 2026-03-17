@@ -14,6 +14,8 @@ dist-ssr
 
 # Large binary files (deployed separately via SCP)
 public/gammes/*.pptx
+server/generated/*
+!server/generated/.gitkeep
 
 # Editor directories and files
 .vscode/*

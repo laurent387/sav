@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { Modal } from '../../components/Modal'
-import { workOrders, technicians, retrofitOperations } from '../../data'
+import { useGmaoData } from '../../contexts/DataContext'
 
 interface StepData {
   photo?: string
@@ -30,6 +30,7 @@ interface Props {
 }
 
 export function TechRapports({ technicianId }: Props) {
+  const { workOrders, technicians, retrofitOperations } = useGmaoData()
   const tech = technicians.find(t => t.id === technicianId)
   const myOTs = workOrders.filter(o => o.technicianIds.includes(technicianId))
 

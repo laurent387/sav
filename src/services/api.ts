@@ -150,6 +150,10 @@ export class ApiService {
     return this.request('/fncs')
   }
 
+  public static async getRetrofitOperations() {
+    return this.request('/retrofit-operations')
+  }
+
   // Mock fallback si serveur non disponible
   public static async loginMock(credentials: LoginRequest) {
     // Simulation locale pour développement

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Modal } from '../../components/Modal'
-import { fncs as initialFncs, workOrders, liftUnits, technicians, type FNC } from '../../data'
+import { type FNC } from '../../data'
+import { useGmaoData } from '../../contexts/DataContext'
 
 type FncStatus = FNC['status']
 
@@ -31,6 +32,7 @@ interface FNCExtended extends FNC {
 }
 
 export function FNCPage({ role }: { role: string }) {
+  const { fncs: initialFncs, workOrders, liftUnits, technicians } = useGmaoData()
   const [fncList, setFncList] = useState<FNCExtended[]>(
     initialFncs.map(f => ({ ...f, severity: 'Majeure' as Severity, category: 'Vibration' }))
   )
@@ -431,6 +433,7 @@ export function FNCPage({ role }: { role: string }) {
 }
 
 function TreatFNCForm({ fnc, onSave, onCancel }: { fnc: FNCExtended; onSave: (id: string, action: string, responsible: string) => void; onCancel: () => void }) {
+  const { technicians } = useGmaoData()
   const [action, setAction] = useState(fnc.correctiveAction || '')
   const [responsible, setResponsible] = useState(fnc.responsible || '')
 

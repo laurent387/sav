@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { liftUnits, workOrders, type Configuration } from '../../data'
+import { type Configuration } from '../../data'
+import { useGmaoData } from '../../contexts/DataContext'
 
 function configPill(c: Configuration) {
   const map: Record<Configuration, string> = {
@@ -24,6 +25,7 @@ function unitStatusPill(s: string) {
 }
 
 export function BEParc() {
+  const { liftUnits, workOrders } = useGmaoData()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('Tous')
   const [configFilter, setConfigFilter] = useState('Toutes')

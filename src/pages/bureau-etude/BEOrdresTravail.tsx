@@ -1,9 +1,9 @@
 import { startTransition, useDeferredValue, useState } from 'react'
 import { Modal } from '../../components/Modal'
 import {
-  workOrders as initialWorkOrders, technicians, retrofitOperations, liftUnits,
   type WorkOrder, type OTStatus, type OTType, type OTPriority, type OpStatus, type Configuration,
 } from '../../data'
+import { useGmaoData } from '../../contexts/DataContext'
 
 function otStatusLabel(s: OTStatus) {
   const map: Record<OTStatus, string> = {
@@ -35,6 +35,7 @@ function configPill(c: Configuration) {
 }
 
 export function BEOrdresTravail() {
+  const { workOrders: initialWorkOrders, technicians, retrofitOperations, liftUnits } = useGmaoData()
   const [workOrders, setWorkOrders] = useState(initialWorkOrders)
   const [statusFilter, setStatusFilter] = useState('Tous')
   const [typeFilter, setTypeFilter] = useState('Tous')

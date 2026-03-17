@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { liftUnits, workOrders, technicians, fncs } from '../../data'
+import { useGmaoData } from '../../contexts/DataContext'
 
 interface ReportData {
   label: string
@@ -19,6 +19,7 @@ function exportCSV(filename: string, headers: string[], rows: string[][]) {
 }
 
 export function AdminReports({ onUnitClick }: { onUnitClick?: (id: string) => void }) {
+  const { liftUnits, workOrders, technicians, fncs } = useGmaoData()
   const [reportType, setReportType] = useState<'parc' | 'ot' | 'techniciens' | 'fnc'>('parc')
   const [searchParc, setSearchParc] = useState('')
   const [filterStatus, setFilterStatus] = useState('')

@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Modal } from '../../components/Modal'
-import { partsAlerts, retrofitOperations } from '../../data'
+import { useGmaoData } from '../../contexts/DataContext'
 
 interface StockItem {
   id: string
@@ -14,7 +14,7 @@ interface StockItem {
   derniereReception?: string
 }
 
-const initialStock: StockItem[] = [
+const baseStock: StockItem[] = [
   { id: 'STK-001', designation: 'Motorisation Z 109414-0003-3200', reference: '109414-0003-3200', stockActuel: 0, stockMin: 2, emplacement: 'Magasin Paris A3', fournisseur: 'ALSTOM Parts', prixUnit: 1250 },
   { id: 'STK-002', designation: 'Bord sensible ELE016/020A0V3', reference: 'ELE016/020A0V3', stockActuel: 1, stockMin: 3, emplacement: 'Magasin Bordeaux B1', fournisseur: 'ALSTOM Parts', prixUnit: 380 },
   { id: 'STK-003', designation: 'Chariot rotation CF10', reference: 'CF10', stockActuel: 2, stockMin: 4, emplacement: 'Magasin Paris A1', fournisseur: 'SKF', prixUnit: 560 },
@@ -23,22 +23,28 @@ const initialStock: StockItem[] = [
   { id: 'STK-006', designation: 'Rondelle Cs M6', reference: 'ISO_645156', stockActuel: 180, stockMin: 60, emplacement: 'Magasin Paris C2', fournisseur: 'Visserie Express', prixUnit: 0.05 },
   { id: 'STK-007', designation: 'VIS TETE H M06X30', reference: 'ISO_1234', stockActuel: 45, stockMin: 20, emplacement: 'Magasin Lyon B3', fournisseur: 'Visserie Express', prixUnit: 0.18 },
   { id: 'STK-008', designation: 'Came ref 4206', reference: '4206', stockActuel: 3, stockMin: 2, emplacement: 'Magasin Paris A2', fournisseur: 'ALSTOM Parts', prixUnit: 95 },
-  ...retrofitOperations.flatMap(op => op.parts).filter((p, i, arr) =>
-    arr.findIndex(x => x.reference === p.reference) === i &&
-    !['109414-0003-3200', 'ELE016/020A0V3', 'CF10', 'ISO_07380', 'ISO_04032', 'ISO_645156', 'ISO_1234', '4206'].includes(p.reference)
-  ).map((p, i) => ({
-    id: `STK-${String(9 + i).padStart(3, '0')}`,
-    designation: p.designation,
-    reference: p.reference,
-    stockActuel: Math.floor(Math.random() * 50) + 5,
-    stockMin: 10,
-    emplacement: 'Magasin Paris',
-    fournisseur: 'Divers',
-    prixUnit: Math.round(Math.random() * 20 * 100) / 100,
-  })),
 ]
 
+const knownRefs = ['109414-0003-3200', 'ELE016/020A0V3', 'CF10', 'ISO_07380', 'ISO_04032', 'ISO_645156', 'ISO_1234', '4206']
+
 export function LogStock() {
+  const { partsAlerts, retrofitOperations } = useGmaoData()
+  const initialStock = useMemo(() => [
+    ...baseStock,
+    ...retrofitOperations.flatMap(op => op.parts).filter((p, i, arr) =>
+      arr.findIndex(x => x.reference === p.reference) === i &&
+      !knownRefs.includes(p.reference)
+    ).map((p, i) => ({
+      id: `STK-${String(9 + i).padStart(3, '0')}`,
+      designation: p.designation,
+      reference: p.reference,
+      stockActuel: Math.floor(Math.random() * 50) + 5,
+      stockMin: 10,
+      emplacement: 'Magasin Paris',
+      fournisseur: 'Divers',
+      prixUnit: Math.round(Math.random() * 20 * 100) / 100,
+    })),
+  ], [retrofitOperations])
   const [stock, setStock] = useState(initialStock)
   const [search, setSearch] = useState('')
   const [showLow, setShowLow] = useState(false)

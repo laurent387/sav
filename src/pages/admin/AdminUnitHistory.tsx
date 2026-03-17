@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import {
-  liftUnits, workOrders, fncs, technicians, retrofitOperations,
-  type Configuration, type LiftUnit,
+  type Configuration, type LiftUnit, type WorkOrder, type RetrofitOperation, type FNC,
 } from '../../data'
+import { useGmaoData } from '../../contexts/DataContext'
 
 const AI_API_BASE = 'http://localhost:8787'
 
@@ -92,7 +92,7 @@ interface TimelineEvent {
   status?: string
 }
 
-function buildTimeline(unit: LiftUnit): TimelineEvent[] {
+function buildTimeline(unit: LiftUnit, workOrders: WorkOrder[], retrofitOperations: RetrofitOperation[], fncs: FNC[]): TimelineEvent[] {
   const events: TimelineEvent[] = []
 
   events.push({
@@ -160,6 +160,7 @@ interface Props {
 }
 
 export function AdminUnitHistory({ unitId, onBack }: Props) {
+  const { liftUnits, workOrders, fncs, technicians, retrofitOperations } = useGmaoData()
   const [aiQuestion, setAiQuestion] = useState('')
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState<string | null>(null)
@@ -179,7 +180,7 @@ export function AdminUnitHistory({ unitId, onBack }: Props) {
 
   const unitOTs = workOrders.filter(o => o.unitId === unit.id)
   const unitFncs = fncs.filter(f => unitOTs.some(ot => ot.id === f.workOrderId))
-  const timeline = buildTimeline(unit)
+  const timeline = buildTimeline(unit, workOrders, retrofitOperations, fncs)
 
   const totalOps = unitOTs.reduce((s, ot) => s + ot.operations.length, 0)
   const doneOps = unitOTs.reduce((s, ot) => s + ot.operations.filter(op => op.status === 'fait').length, 0)
