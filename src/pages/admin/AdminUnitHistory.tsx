@@ -1,7 +1,50 @@
+import { useState } from 'react'
 import {
   liftUnits, workOrders, fncs, technicians, retrofitOperations,
   type Configuration, type LiftUnit,
 } from '../../data'
+
+const AI_API_BASE = 'http://localhost:8787'
+
+interface AIStructured {
+  summary: string
+  probable_causes: string[]
+  checks: string[]
+  parts_to_review: string[]
+  recommended_action: string
+  fnc_draft: string
+  confidence: 'low' | 'medium' | 'high'
+}
+
+interface AIResponse {
+  ok: boolean
+  sessionId: string
+  answer: string
+  structured: AIStructured | null
+}
+
+async function analyzeUnitHistory(payload: {
+  question: string
+  sessionId?: string
+  unit: object
+  history: object[]
+  workOrders: object[]
+  documents: string[]
+  technicianNotes: string
+}): Promise<AIResponse> {
+  const res = await fetch(`${AI_API_BASE}/api/ai/unit-history/analyze`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    throw new Error(text || `Erreur serveur (${res.status})`)
+  }
+  const data: AIResponse = await res.json()
+  if (!data.ok) throw new Error(data.answer || 'Réponse invalide du serveur')
+  return data
+}
 
 function configPill(c: Configuration) {
   const map: Record<Configuration, string> = {
@@ -117,6 +160,13 @@ interface Props {
 }
 
 export function AdminUnitHistory({ unitId, onBack }: Props) {
+  const [aiQuestion, setAiQuestion] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState<string | null>(null)
+  const [aiResult, setAiResult] = useState<AIResponse | null>(null)
+  const [aiSessionId, setAiSessionId] = useState<string | undefined>(undefined)
+  const [aiCopied, setAiCopied] = useState(false)
+
   const unit = liftUnits.find(u => u.id === unitId)
   if (!unit) {
     return (
@@ -133,6 +183,66 @@ export function AdminUnitHistory({ unitId, onBack }: Props) {
 
   const totalOps = unitOTs.reduce((s, ot) => s + ot.operations.length, 0)
   const doneOps = unitOTs.reduce((s, ot) => s + ot.operations.filter(op => op.status === 'fait').length, 0)
+
+  function handleAiAnalyze() {
+    if (!aiQuestion.trim() || aiLoading) return
+    setAiLoading(true)
+    setAiError(null)
+
+    const historyEvents = timeline.map(e => ({
+      date: e.date, type: e.type, title: e.title, detail: e.detail, status: e.status,
+    }))
+
+    const otData = unitOTs.map(ot => ({
+      id: ot.id, type: ot.type, status: ot.status, priority: ot.priority,
+      createdDate: ot.createdDate, plannedDate: ot.plannedDate, completedDate: ot.completedDate,
+      description: ot.description, notes: ot.notes,
+      fromConfig: ot.fromConfig, toConfig: ot.toConfig,
+      technicianIds: ot.technicianIds,
+      operations: ot.operations.map(wop => {
+        const op = retrofitOperations.find(o => o.id === wop.operationId)
+        return {
+          id: wop.operationId, code: op?.code, title: op?.title,
+          status: wop.status, completedAt: wop.completedAt,
+          notes: wop.notes, fncs: wop.fncs,
+        }
+      }),
+    }))
+
+    const techNotes = unitOTs
+      .flatMap(ot => ot.operations.filter(op => op.notes).map(op => `[${ot.id}] ${op.notes}`))
+      .join('\n')
+
+    const docs = unitOTs
+      .flatMap(ot => ot.operations.map(op => retrofitOperations.find(o => o.id === op.operationId)))
+      .filter(Boolean)
+      .map(op => `${op!.code} — ${op!.title}`)
+      .filter((v, i, a) => a.indexOf(v) === i)
+
+    analyzeUnitHistory({
+      question: aiQuestion,
+      sessionId: aiSessionId,
+      unit: {
+        id: unit!.id, serialNumber: unit!.serialNumber, client: unit!.client,
+        site: unit!.site, city: unit!.city, currentConfig: unit!.currentConfig,
+        targetConfig: unit!.targetConfig, status: unit!.status,
+        partieFixeId: unit!.partieFixeId, partieMobileId: unit!.partieMobileId,
+        installDate: unit!.installDate, lastServiceDate: unit!.lastServiceDate,
+      },
+      history: historyEvents,
+      workOrders: otData,
+      documents: docs,
+      technicianNotes: techNotes,
+    })
+      .then(result => {
+        setAiResult(result)
+        setAiSessionId(result.sessionId)
+      })
+      .catch(err => {
+        setAiError(err instanceof Error ? err.message : 'Erreur inconnue')
+      })
+      .finally(() => setAiLoading(false))
+  }
 
   return (
     <div className="page-content">
@@ -305,6 +415,117 @@ export function AdminUnitHistory({ unitId, onBack }: Props) {
                 </article>
               )
             })}
+          </div>
+        )}
+      </section>
+
+      {/* Analyse IA */}
+      <section className="panel ai-analysis-panel">
+        <div className="section-heading">
+          <div>
+            <p className="section-kicker">Intelligence artificielle</p>
+            <h2>Analyse IA de l'unité</h2>
+          </div>
+          <span className="pill neutral">Expérimental</span>
+        </div>
+
+        <div className="ai-input-row">
+          <input
+            type="text"
+            className="filter-input"
+            placeholder="Ex : Pourquoi cette machine vibre-t-elle au niveau du tambour ?"
+            value={aiQuestion}
+            onChange={e => setAiQuestion(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && aiQuestion.trim() && !aiLoading) handleAiAnalyze() }}
+            disabled={aiLoading}
+          />
+          <button
+            type="button"
+            className="primary-action"
+            disabled={!aiQuestion.trim() || aiLoading}
+            onClick={handleAiAnalyze}
+          >
+            {aiLoading ? '⏳ Analyse…' : '🤖 Analyser avec IA'}
+          </button>
+        </div>
+
+        {aiLoading && (
+          <div className="ai-loading">
+            <div className="ai-spinner" />
+            <span>Analyse en cours… L'IA examine l'historique de {unit.id}</span>
+          </div>
+        )}
+
+        {aiError && (
+          <div className="ai-error">
+            <strong>⚠️ Erreur</strong>
+            <p>{aiError}</p>
+          </div>
+        )}
+
+        {aiResult && !aiLoading && (
+          <div className="ai-result">
+            {aiResult.structured ? (
+              <>
+                <div className="ai-confidence">
+                  <span className={`pill ${aiResult.structured.confidence === 'high' ? 'accent' : aiResult.structured.confidence === 'medium' ? 'warning' : 'danger'}`}>
+                    Confiance : {aiResult.structured.confidence === 'high' ? 'Haute' : aiResult.structured.confidence === 'medium' ? 'Moyenne' : 'Basse'}
+                  </span>
+                </div>
+
+                <div className="ai-section">
+                  <h4>📋 Résumé</h4>
+                  <p>{aiResult.structured.summary}</p>
+                </div>
+
+                {aiResult.structured.probable_causes.length > 0 && (
+                  <div className="ai-section">
+                    <h4>🔍 Causes probables</h4>
+                    <ul>{aiResult.structured.probable_causes.map((c, i) => <li key={i}>{c}</li>)}</ul>
+                  </div>
+                )}
+
+                {aiResult.structured.checks.length > 0 && (
+                  <div className="ai-section">
+                    <h4>✅ Vérifications recommandées</h4>
+                    <ul>{aiResult.structured.checks.map((c, i) => <li key={i}>{c}</li>)}</ul>
+                  </div>
+                )}
+
+                {aiResult.structured.parts_to_review.length > 0 && (
+                  <div className="ai-section">
+                    <h4>🔩 Pièces à vérifier</h4>
+                    <ul>{aiResult.structured.parts_to_review.map((p, i) => <li key={i}>{p}</li>)}</ul>
+                  </div>
+                )}
+
+                {aiResult.structured.recommended_action && (
+                  <div className="ai-section">
+                    <h4>🎯 Action recommandée</h4>
+                    <p>{aiResult.structured.recommended_action}</p>
+                  </div>
+                )}
+
+                {aiResult.structured.fnc_draft && (
+                  <div className="ai-section ai-fnc-draft">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                      <h4>📝 Brouillon FNC</h4>
+                      <button type="button" className="btn-export" onClick={() => {
+                        navigator.clipboard.writeText(aiResult.structured!.fnc_draft)
+                        setAiCopied(true)
+                        setTimeout(() => setAiCopied(false), 2000)
+                      }}>{aiCopied ? '✓ Copié !' : '📋 Copier le brouillon FNC'}</button>
+                    </div>
+                    <pre className="ai-fnc-pre">{aiResult.structured.fnc_draft}</pre>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="ai-section">
+                <h4>💬 Réponse</h4>
+                <p style={{ whiteSpace: 'pre-wrap' }}>{aiResult.answer}</p>
+              </div>
+            )}
           </div>
         )}
       </section>
