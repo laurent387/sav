@@ -29,10 +29,14 @@ import { TechMesOT } from './pages/technicien/TechMesOT'
 import { TechRapports } from './pages/technicien/TechRapports'
 import { TechGammes } from './pages/technicien/TechGammes'
 
+// Shared pages
+import { FNCPage } from './pages/shared/FNCPage'
+
 const roleMenus: Record<string, { id: string; label: string; icon: string }[]> = {
   admin: [
     { id: 'dashboard', label: 'Tableau de bord', icon: '📊' },
     { id: 'users', label: 'Utilisateurs', icon: '👥' },
+    { id: 'fnc', label: 'Fiches FNC', icon: '⚠️' },
     { id: 'reports', label: 'Rapports', icon: '📈' },
     { id: 'config', label: 'Configuration', icon: '⚙️' },
   ],
@@ -40,6 +44,7 @@ const roleMenus: Record<string, { id: string; label: string; icon: string }[]> =
     { id: 'dashboard', label: 'Vue d\'ensemble', icon: '📐' },
     { id: 'ordres-travail', label: 'Ordres de travail', icon: '📋' },
     { id: 'gammes', label: 'Gammes', icon: '📖' },
+    { id: 'fnc', label: 'Fiches FNC', icon: '⚠️' },
     { id: 'parc', label: 'Parc LIFT', icon: '🏭' },
   ],
   logistique: [
@@ -51,6 +56,7 @@ const roleMenus: Record<string, { id: string; label: string; icon: string }[]> =
   technicien: [
     { id: 'dashboard', label: 'Mon tableau de bord', icon: '🏠' },
     { id: 'mes-ot', label: 'Mes OT', icon: '🔧' },
+    { id: 'fnc', label: 'Fiches FNC', icon: '⚠️' },
     { id: 'rapports', label: 'Rapports', icon: '📝' },
     { id: 'gammes', label: 'Documentation', icon: '📖' },
   ],
@@ -102,6 +108,7 @@ function RoleDashboard({ user, onLogout }: { user: User; onLogout: () => void })
       case 'admin':
         switch (activeMenu) {
           case 'users': return <AdminUsers />
+          case 'fnc': return <FNCPage role="admin" />
           case 'reports': return <AdminReports />
           case 'config': return <AdminConfig />
           default: return <AdminDashboard />
@@ -110,6 +117,7 @@ function RoleDashboard({ user, onLogout }: { user: User; onLogout: () => void })
         switch (activeMenu) {
           case 'ordres-travail': return <BEOrdresTravail />
           case 'gammes': return <BEGammes />
+          case 'fnc': return <FNCPage role="bureau-etude" />
           case 'parc': return <BEParc />
           default: return <BEDashboard />
         }
@@ -123,6 +131,7 @@ function RoleDashboard({ user, onLogout }: { user: User; onLogout: () => void })
       case 'technicien':
         switch (activeMenu) {
           case 'mes-ot': return <TechMesOT technicianId={techId} />
+          case 'fnc': return <FNCPage role="technicien" />
           case 'rapports': return <TechRapports technicianId={techId} />
           case 'gammes': return <TechGammes />
           default: return <TechDashboard technicianId={techId} />
