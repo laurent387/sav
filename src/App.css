@@ -625,6 +625,68 @@
   border-bottom: 0;
 }
 
+/* User Profile & Logout */
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+  padding: 12px 14px;
+  background: rgb(255 255 255 / 10%);
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: right;
+}
+
+.user-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-strong);
+}
+
+.user-role {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: white;
+  display: inline-block;
+  width: fit-content;
+  margin-left: auto;
+}
+
+.logout-btn {
+  padding: 8px 12px;
+  background: rgb(239 68 68 / 90%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.logout-btn:hover {
+  background: rgb(239 68 68);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.logout-btn:active {
+  transform: translateY(0);
+}
+
 @media (max-width: 1180px) {
   .workspace-grid,
   .hero-panel,

@@ -15,6 +15,8 @@ import {
   type OpStatus,
   type Section,
 } from './data'
+import { useAuth } from './hooks/useAuth'
+import { LoginPage } from './pages/LoginPage'
 
 type View = 'overview' | 'ordres-travail' | 'parc' | 'gammes'
 
@@ -24,6 +26,14 @@ const views: Array<{ id: View; label: string }> = [
   { id: 'parc', label: 'Parc LIFT' },
   { id: 'gammes', label: 'Gammes' },
 ]
+
+// Vues accessibles par rôle
+const roleViews: Record<string, View[]> = {
+  admin: ['overview', 'ordres-travail', 'parc', 'gammes'],
+  'bureau-etude': ['overview', 'ordres-travail', 'parc', 'gammes'],
+  logistique: ['overview', 'parc'],
+  technicien: ['overview', 'ordres-travail'],
+}
 
 function configPill(c: Configuration) {
   const map: Record<Configuration, string> = {
@@ -106,7 +116,46 @@ function totalEstimatedHours(opIds: string[]) {
 }
 
 function App() {
-  const [activeView, setActiveView] = useState<View>('overview')
+  const { user, isAuthenticated, isLoading, logout } = useAuth()
+
+  // Si l'authentification est en cours, afficher un loader
+  if (isLoading) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      }}>
+        <div style={{ textAlign: 'center', color: 'white' }}>
+          <p style={{ fontSize: '18px', marginBottom: '20px' }}>Chargement...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Si l'utilisateur n'est pas connecté, afficher la page de login
+  if (!isAuthenticated || !user) {
+    return <LoginPage />
+  }
+
+  // Déterminer les vues accessibles pour ce rôle
+  const userViews = roleViews[user.role] || ['overview']
+
+  return <AppContent user={user} onLogout={logout} accessibleViews={userViews} />
+}
+
+function AppContent({
+  user,
+  onLogout,
+  accessibleViews,
+}: {
+  user: any
+  onLogout: () => void
+  accessibleViews: View[]
+}) {
+  const [activeView, setActiveView] = useState<View>(accessibleViews[0] || 'overview')
   const [otStatusFilter, setOtStatusFilter] = useState('Tous')
   const [otTypeFilter, setOtTypeFilter] = useState('Tous')
   const [otSearch, setOtSearch] = useState('')
@@ -145,6 +194,9 @@ function App() {
     return matchSection && matchDiscipline && matchSearch
   })
 
+  // Filtrer les vues affichables
+  const displayViews = views.filter((v) => accessibleViews.includes(v.id))
+
   return (
     <div className="shell">
       <header className="hero-panel">
@@ -178,10 +230,29 @@ function App() {
             <small>Fiches de non-conformité à traiter en priorité</small>
           </article>
         </div>
+
+        <div className="user-profile">
+          <div className="user-info">
+            <span className="user-name">{user.fullName}</span>
+            <span className="user-role" style={{
+              background: {
+                admin: '#f59e0b',
+                'bureau-etude': '#3b82f6',
+                logistique: '#10b981',
+                technicien: '#ef4444',
+              }[user.role] || '#6b7280',
+            }}>
+              {user.role === 'bureau-etude' ? 'Bureau d\'Études' : user.role === 'technicien' ? 'Technicien' : user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+            </span>
+          </div>
+          <button className="logout-btn" type="button" onClick={onLogout}>
+            Déconnexion
+          </button>
+        </div>
       </header>
 
       <nav className="view-switcher" aria-label="Sections principales">
-        {views.map((view) => (
+        {displayViews.map((view) => (
           <button
             key={view.id}
             type="button"
