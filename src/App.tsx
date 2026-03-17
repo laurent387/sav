@@ -10,6 +10,7 @@ import { AdminDashboard } from './pages/admin/AdminDashboard'
 import { AdminUsers } from './pages/admin/AdminUsers'
 import { AdminReports } from './pages/admin/AdminReports'
 import { AdminConfig } from './pages/admin/AdminConfig'
+import { AdminUnitHistory } from './pages/admin/AdminUnitHistory'
 
 // Bureau d'Études pages
 import { BEDashboard } from './pages/bureau-etude/BEDashboard'
@@ -100,16 +101,26 @@ function App() {
 function RoleDashboard({ user, onLogout }: { user: User; onLogout: () => void }) {
   const menus = roleMenus[user.role] || roleMenus.admin
   const [activeMenu, setActiveMenu] = useState(menus[0]?.id || 'dashboard')
+  const [historyUnitId, setHistoryUnitId] = useState<string | null>(null)
 
   const techId = getTechnicianId(user)
 
+  function handleMenuChange(id: string) {
+    setActiveMenu(id)
+    setHistoryUnitId(null)
+  }
+
   function renderPage() {
+    if (historyUnitId && user.role === 'admin') {
+      return <AdminUnitHistory unitId={historyUnitId} onBack={() => setHistoryUnitId(null)} />
+    }
+
     switch (user.role) {
       case 'admin':
         switch (activeMenu) {
           case 'users': return <AdminUsers />
           case 'fnc': return <FNCPage role="admin" />
-          case 'reports': return <AdminReports />
+          case 'reports': return <AdminReports onUnitClick={(id: string) => setHistoryUnitId(id)} />
           case 'config': return <AdminConfig />
           default: return <AdminDashboard />
         }
@@ -147,7 +158,7 @@ function RoleDashboard({ user, onLogout }: { user: User; onLogout: () => void })
       onLogout={onLogout}
       menuItems={menus}
       activeMenu={activeMenu}
-      onMenuChange={setActiveMenu}
+      onMenuChange={handleMenuChange}
     >
       {renderPage()}
     </DashboardLayout>

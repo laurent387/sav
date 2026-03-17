@@ -6,7 +6,7 @@ interface ReportData {
   value: number | string
 }
 
-export function AdminReports() {
+export function AdminReports({ onUnitClick }: { onUnitClick?: (id: string) => void }) {
   const [reportType, setReportType] = useState<'parc' | 'ot' | 'techniciens' | 'fnc'>('parc')
 
   const parcReport: ReportData[] = [
@@ -120,7 +120,7 @@ export function AdminReports() {
             </thead>
             <tbody>
               {liftUnits.map(u => (
-                <tr key={u.id}>
+                <tr key={u.id} onClick={() => onUnitClick?.(u.id)} style={{ cursor: 'pointer' }} className="clickable-row">
                   <td><strong>{u.id}</strong></td>
                   <td>{u.client}</td>
                   <td>{u.site}</td>

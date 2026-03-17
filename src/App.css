@@ -2154,3 +2154,86 @@
     padding-left: 30px;
   }
 }
+
+/* ═══════════ Unit History Page ═══════════ */
+.clickable-row:hover {
+  background: rgba(43, 127, 255, 0.06);
+  transition: background 0.15s;
+}
+
+.history-ot-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.history-ot-card {
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.history-ot-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.history-timeline {
+  position: relative;
+  padding-left: 32px;
+}
+
+.history-timeline::before {
+  content: '';
+  position: absolute;
+  left: 14px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: var(--border-soft);
+}
+
+.timeline-item {
+  display: flex;
+  gap: 16px;
+  padding: 12px 0;
+  position: relative;
+}
+
+.timeline-dot {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--panel);
+  border: 2px solid var(--border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  z-index: 1;
+  margin-left: -32px;
+}
+
+.timeline-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.timeline-detail {
+  color: var(--text-soft);
+  margin-top: 4px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
