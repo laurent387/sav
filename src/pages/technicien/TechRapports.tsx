@@ -1,6 +1,16 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Modal } from '../../components/Modal'
 import { workOrders, technicians, retrofitOperations } from '../../data'
+
+interface StepData {
+  photo?: string
+  commentaire?: string
+}
+
+interface OperationData {
+  operationId: string
+  steps: Record<number, StepData>
+}
 
 interface Rapport {
   id: string
@@ -9,6 +19,7 @@ interface Rapport {
   site: string
   heuresTravail: number
   operations: string[]
+  operationsData?: OperationData[]
   observations: string
   statut: 'brouillon' | 'soumis' | 'valide'
   problemes?: string
@@ -55,12 +66,58 @@ export function TechRapports({ technicianId }: Props) {
   const [newOps, setNewOps] = useState<string[]>([])
   const [newObs, setNewObs] = useState('')
   const [newProb, setNewProb] = useState('')
+  const [stepData, setStepData] = useState<Record<string, Record<number, StepData>>>({})
+  const [expandedOp, setExpandedOp] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [pendingPhotoKey, setPendingPhotoKey] = useState<{ opId: string; stepIdx: number } | null>(null)
+
+  function updateStepData(opId: string, stepIdx: number, field: keyof StepData, value: string) {
+    setStepData(prev => ({
+      ...prev,
+      [opId]: {
+        ...prev[opId],
+        [stepIdx]: { ...prev[opId]?.[stepIdx], [field]: value },
+      },
+    }))
+  }
+
+  function handlePhotoCapture(opId: string, stepIdx: number) {
+    setPendingPhotoKey({ opId, stepIdx })
+    fileInputRef.current?.click()
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !pendingPhotoKey) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      updateStepData(pendingPhotoKey.opId, pendingPhotoKey.stepIdx, 'photo', reader.result as string)
+      setPendingPhotoKey(null)
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
+
+  function removePhoto(opId: string, stepIdx: number) {
+    setStepData(prev => {
+      const copy = { ...prev, [opId]: { ...prev[opId] } }
+      if (copy[opId]?.[stepIdx]) {
+        const { photo: _, ...rest } = copy[opId][stepIdx]
+        copy[opId][stepIdx] = rest
+      }
+      return copy
+    })
+  }
 
   const selected = selectedId ? rapports.find(r => r.id === selectedId) : null
 
   function handleCreate() {
     if (!newOT || !newHeures || !newObs.trim()) return
     const ot = myOTs.find(o => o.id === newOT)
+    const opsData: OperationData[] = newOps.map(opId => ({
+      operationId: opId,
+      steps: stepData[opId] ?? {},
+    })).filter(od => Object.keys(od.steps).length > 0)
     const rap: Rapport = {
       id: `RAP-${String(rapports.length + 1).padStart(3, '0')}`,
       date: new Date().toISOString().slice(0, 10),
@@ -68,6 +125,7 @@ export function TechRapports({ technicianId }: Props) {
       site: ot ? `${ot.site}, ${ot.city}` : '',
       heuresTravail: parseFloat(newHeures),
       operations: newOps,
+      operationsData: opsData.length > 0 ? opsData : undefined,
       observations: newObs,
       problemes: newProb || undefined,
       statut: 'brouillon',
@@ -78,6 +136,8 @@ export function TechRapports({ technicianId }: Props) {
     setNewOps([])
     setNewObs('')
     setNewProb('')
+    setStepData({})
+    setExpandedOp(null)
   }
 
   function submitRapport(id: string) {
@@ -173,12 +233,31 @@ export function TechRapports({ technicianId }: Props) {
             {selected.operations.length > 0 && (
               <div className="detail-block">
                 <h4>Opérations effectuées</h4>
-                <ul className="checklist">
-                  {selected.operations.map(opId => {
-                    const op = retrofitOperations.find(o => o.id === opId)
-                    return <li key={opId}>{op?.title ?? opId} <span className="op-meta">{op?.code}</span></li>
-                  })}
-                </ul>
+                {selected.operations.map(opId => {
+                  const op = retrofitOperations.find(o => o.id === opId)
+                  const opData = selected.operationsData?.find(od => od.operationId === opId)
+                  const hasStepData = opData && Object.keys(opData.steps).length > 0
+                  return (
+                    <div key={opId} className="detail-op-block">
+                      <div className="detail-op-header">{op?.title ?? opId} <span className="op-meta">{op?.code}</span></div>
+                      {hasStepData && op?.steps && (
+                        <div className="detail-steps-list">
+                          {op.steps.map((stepText, idx) => {
+                            const sd = opData.steps[idx]
+                            if (!sd?.photo && !sd?.commentaire) return null
+                            return (
+                              <div key={idx} className="detail-step-item">
+                                <div className="detail-step-label">Étape {idx + 1}: {stepText}</div>
+                                {sd.commentaire && <p className="detail-step-comment">💬 {sd.commentaire}</p>}
+                                {sd.photo && <img src={sd.photo} alt={`Étape ${idx + 1}`} className="detail-step-photo" />}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             )}
 
@@ -212,27 +291,89 @@ export function TechRapports({ technicianId }: Props) {
             <span>Heures travaillées</span>
             <input type="number" step="0.5" min="0.5" value={newHeures} onChange={e => setNewHeures(e.target.value)} required />
           </label>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            style={{ display: 'none' }}
+            onChange={handleFileChange}
+          />
           {newOT && (() => {
             const ot = myOTs.find(o => o.id === newOT)
             if (!ot || ot.operations.length === 0) return null
             return (
               <div className="form-field full-width">
                 <span>Opérations effectuées</span>
-                <div className="checkbox-group">
+                <div className="ops-checklist">
                   {ot.operations.map(wop => {
                     const op = retrofitOperations.find(o => o.id === wop.operationId)
+                    const isChecked = newOps.includes(wop.operationId)
+                    const isExpanded = expandedOp === wop.operationId && isChecked
                     return (
-                      <label key={wop.operationId} className="checkbox-label">
-                        <input
-                          type="checkbox"
-                          checked={newOps.includes(wop.operationId)}
-                          onChange={e => {
-                            if (e.target.checked) setNewOps(prev => [...prev, wop.operationId])
-                            else setNewOps(prev => prev.filter(id => id !== wop.operationId))
-                          }}
-                        />
-                        {op?.title ?? wop.operationId}
-                      </label>
+                      <div key={wop.operationId} className="op-checklist-item">
+                        <div className="op-checklist-header">
+                          <label className="checkbox-label">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={e => {
+                                if (e.target.checked) {
+                                  setNewOps(prev => [...prev, wop.operationId])
+                                  setExpandedOp(wop.operationId)
+                                } else {
+                                  setNewOps(prev => prev.filter(id => id !== wop.operationId))
+                                  if (expandedOp === wop.operationId) setExpandedOp(null)
+                                }
+                              }}
+                            />
+                            {op?.title ?? wop.operationId}
+                          </label>
+                          {isChecked && op?.steps && (
+                            <button
+                              type="button"
+                              className="btn-expand"
+                              onClick={() => setExpandedOp(isExpanded ? null : wop.operationId)}
+                            >
+                              {isExpanded ? '▲ Masquer étapes' : '▼ Détailler étapes'}
+                            </button>
+                          )}
+                        </div>
+                        {isExpanded && op?.steps && (
+                          <div className="step-details">
+                            {op.steps.map((stepText, idx) => {
+                              const sd = stepData[wop.operationId]?.[idx]
+                              return (
+                                <div key={idx} className="step-row">
+                                  <div className="step-label">
+                                    <span className="step-number">{idx + 1}</span>
+                                    <span>{stepText}</span>
+                                  </div>
+                                  <div className="step-inputs">
+                                    <div className="step-photo-zone">
+                                      {sd?.photo ? (
+                                        <div className="step-photo-preview">
+                                          <img src={sd.photo} alt={`Étape ${idx + 1}`} />
+                                          <button type="button" className="step-photo-remove" onClick={() => removePhoto(wop.operationId, idx)}>✕</button>
+                                        </div>
+                                      ) : (
+                                        <button type="button" className="step-photo-btn" onClick={() => handlePhotoCapture(wop.operationId, idx)}>📷 Photo</button>
+                                      )}
+                                    </div>
+                                    <input
+                                      className="step-comment-input"
+                                      type="text"
+                                      placeholder="Commentaire…"
+                                      value={sd?.commentaire ?? ''}
+                                      onChange={e => updateStepData(wop.operationId, idx, 'commentaire', e.target.value)}
+                                    />
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
                     )
                   })}
                 </div>
