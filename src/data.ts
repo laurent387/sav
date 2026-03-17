@@ -21,6 +21,8 @@ export interface LiftUnit {
   client: string
   site: string
   city: string
+  partieFixeId: string
+  partieMobileId: string
   currentConfig: Configuration
   targetConfig?: Configuration
   status: UnitStatus
@@ -382,36 +384,42 @@ export const liftUnits: LiftUnit[] = [
   {
     id: 'LIFT-001', serialNumber: 'SN-ALST-2019-001',
     client: 'ALSTOM', site: 'Gare du Nord', city: 'Paris',
+    partieFixeId: 'LF001', partieMobileId: 'LF001',
     currentConfig: "E'", targetConfig: 'H', status: 'en-retrofit',
     installDate: '2019-04-12', lastServiceDate: '2025-01-15',
   },
   {
     id: 'LIFT-002', serialNumber: 'SN-ALST-2021-002',
     client: 'ALSTOM', site: 'Part-Dieu', city: 'Lyon',
+    partieFixeId: 'LF002', partieMobileId: 'LF002',
     currentConfig: 'G', status: 'operational',
     installDate: '2021-06-03', lastServiceDate: '2025-03-10',
   },
   {
     id: 'LIFT-003', serialNumber: 'SN-ALST-2018-003',
     client: 'ALSTOM', site: 'Saint-Jean', city: 'Bordeaux',
+    partieFixeId: 'LF003', partieMobileId: 'LF003',
     currentConfig: "E'", targetConfig: 'H', status: 'en-retrofit',
     installDate: '2018-11-20', lastServiceDate: '2024-12-01',
   },
   {
     id: 'LIFT-004', serialNumber: 'SN-ALST-2022-004',
     client: 'ALSTOM', site: 'Saint-Charles', city: 'Marseille',
+    partieFixeId: 'LF004', partieMobileId: 'LF004',
     currentConfig: 'H', status: 'operational',
     installDate: '2022-02-14', lastServiceDate: '2025-05-08',
   },
   {
     id: 'LIFT-005', serialNumber: 'SN-ALST-2020-005',
     client: 'ALSTOM', site: 'Matabiau', city: 'Toulouse',
+    partieFixeId: 'LF005', partieMobileId: 'LF005',
     currentConfig: 'F', status: 'en-maintenance',
     installDate: '2020-08-30', lastServiceDate: '2025-04-22',
   },
   {
     id: 'LIFT-006', serialNumber: 'SN-ALST-2023-006',
     client: 'ALSTOM', site: 'Perrache', city: 'Lyon',
+    partieFixeId: 'LF006', partieMobileId: 'LF006',
     currentConfig: 'I', status: 'operational',
     installDate: '2023-01-17', lastServiceDate: '2025-06-01',
   },

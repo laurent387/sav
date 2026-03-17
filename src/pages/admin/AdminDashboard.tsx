@@ -101,7 +101,8 @@ export function AdminDashboard() {
               <div key={ot.id} className="retrofit-unit">
                 <div className="retrofit-unit-header">
                   <strong>{ot.unitId}</strong>
-                  <span className="op-meta">{ot.site} — {ot.city}</span>
+                  <span className="op-meta">{ot.site}</span>
+                  <span className="op-meta">{ot.city}</span>
                 </div>
                 <div className="progress-track" style={{ height: 8 }}>
                   <span style={{ width: `${pct}%` }} />
@@ -133,7 +134,7 @@ export function AdminDashboard() {
                 <div className="activity-content">
                   <strong>{ot.id}</strong> — {ot.description.slice(0, 80)}…
                   <div className="activity-meta">
-                    {ot.site} · {ot.plannedDate} · <span className={`pill ${ot.priority === 'critique' ? 'danger' : ot.priority === 'haute' ? 'watch' : 'neutral'}`}>{ot.priority}</span>
+                    {ot.site} · {ot.city} · {ot.plannedDate} · <span className={`pill ${ot.priority === 'critique' ? 'danger' : ot.priority === 'haute' ? 'watch' : 'neutral'}`}>{ot.priority}</span>
                   </div>
                 </div>
               </div>

@@ -62,11 +62,14 @@ export function LogParc() {
               <div className="asset-card-top">
                 <div>
                   <h3>{unit.id}</h3>
-                  <p>{unit.client} · {unit.site}, {unit.city}</p>
+                  <p>{unit.client}</p>
+                  <p className="op-meta">{unit.site} · {unit.city}</p>
                 </div>
                 <span className={unitStatusPill(unit.status)}>{unitStatusLabel(unit.status)}</span>
               </div>
               <dl className="asset-stats">
+                <div><dt>Partie Fixe</dt><dd>{unit.partieFixeId}</dd></div>
+                <div><dt>Partie Mobile</dt><dd>{unit.partieMobileId}</dd></div>
                 <div><dt>Conf actuelle</dt><dd><span className={configPill(unit.currentConfig)}>CONF {unit.currentConfig}</span></dd></div>
                 {unit.targetConfig && <div><dt>Conf cible</dt><dd><span className={configPill(unit.targetConfig)}>CONF {unit.targetConfig}</span></dd></div>}
                 <div><dt>Installé</dt><dd>{unit.installDate}</dd></div>

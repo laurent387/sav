@@ -78,11 +78,14 @@ export function BEParc() {
               <div className="asset-card-top">
                 <div>
                   <h3>{unit.id}</h3>
-                  <p>{unit.client} · {unit.site}, {unit.city}</p>
+                  <p>{unit.client}</p>
+                  <p className="op-meta">{unit.site} · {unit.city}</p>
                 </div>
                 <span className={unitStatusPill(unit.status)}>{unitStatusLabel(unit.status)}</span>
               </div>
               <dl className="asset-stats">
+                <div><dt>Partie Fixe</dt><dd>{unit.partieFixeId}</dd></div>
+                <div><dt>Partie Mobile</dt><dd>{unit.partieMobileId}</dd></div>
                 <div><dt>Conf actuelle</dt><dd><span className={configPill(unit.currentConfig)}>CONF {unit.currentConfig}</span></dd></div>
                 {unit.targetConfig && <div><dt>Conf cible</dt><dd><span className={configPill(unit.targetConfig)}>CONF {unit.targetConfig}</span></dd></div>}
                 <div><dt>Installé</dt><dd>{unit.installDate}</dd></div>
@@ -104,7 +107,10 @@ export function BEParc() {
             </div>
             <dl className="detail-grid">
               <div><dt>Client</dt><dd>{selected.client}</dd></div>
-              <div><dt>Site</dt><dd>{selected.site}, {selected.city}</dd></div>
+              <div><dt>Site</dt><dd>{selected.site}</dd></div>
+              <div><dt>Ville</dt><dd>{selected.city}</dd></div>
+              <div><dt>Partie Fixe</dt><dd>{selected.partieFixeId}</dd></div>
+              <div><dt>Partie Mobile</dt><dd>{selected.partieMobileId}</dd></div>
               <div><dt>Config actuelle</dt><dd><span className={configPill(selected.currentConfig)}>CONF {selected.currentConfig}</span></dd></div>
               <div><dt>Config cible</dt><dd>{selected.targetConfig ? <span className={configPill(selected.targetConfig)}>CONF {selected.targetConfig}</span> : '—'}</dd></div>
               <div><dt>Installation</dt><dd>{selected.installDate}</dd></div>

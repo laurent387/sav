@@ -38,7 +38,7 @@ export function TechRapports({ technicianId }: Props) {
       id: 'RAP-001',
       date: '2026-03-17',
       otId: 'OT-2025-001',
-      site: 'Gare du Nord, Paris',
+      site: 'Gare du Nord',
       heuresTravail: 4.5,
       operations: ['OP-001', 'OP-002'],
       observations: 'Demi-lunes remplacées sans difficulté. Bord sensible installé, couple de serrage vérifié.',
@@ -48,7 +48,7 @@ export function TechRapports({ technicianId }: Props) {
       id: 'RAP-002',
       date: '2026-03-16',
       otId: 'OT-2025-003',
-      site: 'Matabiau, Toulouse',
+      site: 'Matabiau',
       heuresTravail: 6,
       operations: ['OP-003'],
       observations: 'Motorisation Z en cours de diagnostic. Vibration confirmée sur tambour.',
@@ -122,7 +122,7 @@ export function TechRapports({ technicianId }: Props) {
       id: `RAP-${String(rapports.length + 1).padStart(3, '0')}`,
       date: new Date().toISOString().slice(0, 10),
       otId: newOT,
-      site: ot ? `${ot.site}, ${ot.city}` : '',
+      site: ot ? ot.site : '',
       heuresTravail: parseFloat(newHeures),
       operations: newOps,
       operationsData: opsData.length > 0 ? opsData : undefined,
@@ -190,7 +190,8 @@ export function TechRapports({ technicianId }: Props) {
               <div className="rapport-header">
                 <div>
                   <span className="row-id">{r.id}</span>
-                  <h3>{r.otId} — {r.site}</h3>
+                  <h3>{r.otId}</h3>
+                  <p className="op-meta">{r.site}</p>
                 </div>
                 <span className={`pill ${r.statut === 'brouillon' ? 'neutral' : r.statut === 'soumis' ? 'warning' : 'accent'}`}>
                   {r.statut === 'brouillon' ? 'Brouillon' : r.statut === 'soumis' ? 'Soumis' : 'Validé'}
@@ -283,7 +284,7 @@ export function TechRapports({ technicianId }: Props) {
             <span>Ordre de travail</span>
             <select value={newOT} onChange={e => setNewOT(e.target.value)}>
               {myOTs.map(ot => (
-                <option key={ot.id} value={ot.id}>{ot.id} — {ot.site}, {ot.city}</option>
+                <option key={ot.id} value={ot.id}>{ot.id} · {ot.site}</option>
               ))}
             </select>
           </label>

@@ -86,7 +86,8 @@ export function BEDashboard() {
             return (
               <div key={ot.id} className="retrofit-unit">
                 <div className="retrofit-unit-header">
-                  <strong>{ot.unitId} — {ot.site}</strong>
+                  <strong>{ot.unitId}</strong>
+                  <span className="op-meta">{ot.site} · {ot.city}</span>
                   <span className={`pill ${ot.status === 'en-cours' ? 'warning' : 'neutral'}`}>{ot.status}</span>
                 </div>
                 <div className="progress-track" style={{ height: 8 }}>

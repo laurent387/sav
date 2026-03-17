@@ -87,7 +87,7 @@ export function TechDashboard({ technicianId }: Props) {
               <div key={`${ot.id}-${op.operationId}`} className="compact-item">
                 <div>
                   <strong>{opDef?.title ?? op.operationId}</strong>
-                  <span className="op-meta">{ot.id} · {ot.site}, {ot.city} · {opDef?.estimatedHours}h</span>
+                  <span className="op-meta">{ot.id} · {ot.site} · {ot.city} · {opDef?.estimatedHours}h</span>
                 </div>
                 <span className="pill warning">En cours</span>
               </div>
@@ -116,7 +116,7 @@ export function TechDashboard({ technicianId }: Props) {
                   <div key={ot.id} className="compact-item">
                     <div>
                       <strong>{ot.id}</strong>
-                      <span>{ot.site} — {ot.city}</span>
+                      <span>{ot.site} · {ot.city}</span>
                       <span className="op-meta">{ot.description.slice(0, 60)}…</span>
                     </div>
                     <div style={{ textAlign: 'right' }}>
@@ -147,7 +147,7 @@ export function TechDashboard({ technicianId }: Props) {
                 <div key={ot.id} className="compact-item">
                   <div>
                     <strong>{ot.id}</strong>
-                    <span>{ot.site} — {ot.city}</span>
+                    <span>{ot.site} · {ot.city}</span>
                     <span className="op-meta">{ot.plannedDate}</span>
                     {ot.fromConfig && (
                       <div className="gamme-configs" style={{ marginTop: 4 }}>

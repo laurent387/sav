@@ -144,7 +144,8 @@ export function BEOrdresTravail() {
                 <div className="row-main">
                   <div>
                     <p className="row-id">{ot.id}</p>
-                    <h3>{ot.site} — {ot.city}</h3>
+                    <h3>{ot.unitId}</h3>
+                    <p className="op-meta">{ot.site} · {ot.city}</p>
                     <p>{ot.client} · {ot.description.slice(0, 70)}…</p>
                   </div>
                   <div className="row-tags">
@@ -168,7 +169,8 @@ export function BEOrdresTravail() {
             <div className="detail-header">
               <div>
                 <p className="row-id">{selected.id}</p>
-                <h3>{selected.site} — {selected.city}</h3>
+                <h3>{selected.unitId}</h3>
+                <p className="op-meta">{selected.site} · {selected.city}</p>
               </div>
               <div className="detail-actions-top">
                 <select
@@ -187,6 +189,9 @@ export function BEOrdresTravail() {
 
             <dl className="detail-grid">
               <div><dt>Client</dt><dd>{selected.client}</dd></div>
+              <div><dt>Site</dt><dd>{selected.site}</dd></div>
+              <div><dt>Ville</dt><dd>{selected.city}</dd></div>
+              {(() => { const u = liftUnits.find(u => u.id === selected.unitId); return u ? <><div><dt>Partie Fixe</dt><dd>{u.partieFixeId}</dd></div><div><dt>Partie Mobile</dt><dd>{u.partieMobileId}</dd></div></> : null })()}
               <div><dt>Type</dt><dd>{otTypeLabel(selected.type)}</dd></div>
               {selected.fromConfig && (
                 <div>
@@ -252,10 +257,38 @@ export function BEOrdresTravail() {
             <span>Unité LIFT</span>
             <select value={newUnit} onChange={e => setNewUnit(e.target.value)}>
               {liftUnits.map(u => (
-                <option key={u.id} value={u.id}>{u.id} — {u.site}, {u.city} (CONF {u.currentConfig})</option>
+                <option key={u.id} value={u.id}>{u.id}</option>
               ))}
             </select>
           </label>
+          {(() => {
+            const u = liftUnits.find(x => x.id === newUnit)
+            if (!u) return null
+            return (
+              <>
+                <div className="form-field">
+                  <span>Site</span>
+                  <input type="text" value={u.site} readOnly className="config-input" />
+                </div>
+                <div className="form-field">
+                  <span>Ville</span>
+                  <input type="text" value={u.city} readOnly className="config-input" />
+                </div>
+                <div className="form-field">
+                  <span>Partie Fixe</span>
+                  <input type="text" value={u.partieFixeId} readOnly className="config-input" />
+                </div>
+                <div className="form-field">
+                  <span>Partie Mobile</span>
+                  <input type="text" value={u.partieMobileId} readOnly className="config-input" />
+                </div>
+                <div className="form-field">
+                  <span>Config actuelle</span>
+                  <input type="text" value={`CONF ${u.currentConfig}`} readOnly className="config-input" />
+                </div>
+              </>
+            )
+          })()}
           <label className="form-field">
             <span>Priorité</span>
             <select value={newPriority} onChange={e => setNewPriority(e.target.value as OTPriority)}>

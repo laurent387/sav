@@ -109,6 +109,9 @@ export function AdminReports() {
                 <th>ID</th>
                 <th>Client</th>
                 <th>Site</th>
+                <th>Ville</th>
+                <th>Partie Fixe</th>
+                <th>Partie Mobile</th>
                 <th>Config actuelle</th>
                 <th>Config cible</th>
                 <th>Statut</th>
@@ -120,7 +123,10 @@ export function AdminReports() {
                 <tr key={u.id}>
                   <td><strong>{u.id}</strong></td>
                   <td>{u.client}</td>
-                  <td>{u.site}, {u.city}</td>
+                  <td>{u.site}</td>
+                  <td>{u.city}</td>
+                  <td>{u.partieFixeId}</td>
+                  <td>{u.partieMobileId}</td>
                   <td>CONF {u.currentConfig}</td>
                   <td>{u.targetConfig ? `CONF ${u.targetConfig}` : '—'}</td>
                   <td><span className={`pill ${u.status === 'operational' ? 'accent' : u.status === 'en-retrofit' ? 'warning' : 'danger'}`}>{u.status}</span></td>
@@ -142,7 +148,9 @@ export function AdminReports() {
               <tr>
                 <th>OT</th>
                 <th>Type</th>
+                <th>Unité</th>
                 <th>Site</th>
+                <th>Ville</th>
                 <th>Priorité</th>
                 <th>Statut</th>
                 <th>Avancement</th>
@@ -157,7 +165,9 @@ export function AdminReports() {
                   <tr key={ot.id}>
                     <td><strong>{ot.id}</strong></td>
                     <td>{ot.type}</td>
-                    <td>{ot.site}, {ot.city}</td>
+                    <td>{ot.unitId}</td>
+                    <td>{ot.site}</td>
+                    <td>{ot.city}</td>
                     <td><span className={`pill ${ot.priority === 'critique' ? 'danger' : ot.priority === 'haute' ? 'watch' : 'neutral'}`}>{ot.priority}</span></td>
                     <td>{ot.status}</td>
                     <td>{pct}%</td>

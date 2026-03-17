@@ -213,8 +213,8 @@ export function FNCPage({ role }: { role: string }) {
 
                   <div className="fnc-card-meta">
                     <span>📅 {fnc.date}</span>
-                    {ot && <span>🔧 {ot.id} — {ot.site}</span>}
-                    {unit && <span>🏭 {unit.id}</span>}
+                    {ot && <span>🔧 {ot.id} · {ot.site}</span>}
+                    {unit && <span>🏭 {unit.id} · PF {unit.partieFixeId} · PM {unit.partieMobileId}</span>}
                   </div>
                 </div>
 
@@ -269,22 +269,26 @@ export function FNCPage({ role }: { role: string }) {
                   <dt>OT lié</dt>
                   <dd>
                     {ot ? (
-                      <span>{ot.id} — {ot.site}, {ot.city}</span>
+                      <span>{ot.id}</span>
                     ) : (
                       <span style={{ color: 'var(--text-subtle)' }}>Aucun OT lié</span>
                     )}
                   </dd>
                 </div>
+                {ot && <div><dt>Site</dt><dd>{ot.site}</dd></div>}
+                {ot && <div><dt>Ville</dt><dd>{ot.city}</dd></div>}
                 <div>
                   <dt>Unité LIFT</dt>
                   <dd>
                     {unit ? (
-                      <span>{unit.id} — {unit.site}, {unit.city}</span>
+                      <span>{unit.id}</span>
                     ) : (
                       <span style={{ color: 'var(--text-subtle)' }}>—</span>
                     )}
                   </dd>
                 </div>
+                {unit && <div><dt>Partie Fixe</dt><dd>{unit.partieFixeId}</dd></div>}
+                {unit && <div><dt>Partie Mobile</dt><dd>{unit.partieMobileId}</dd></div>}
                 {techs.length > 0 && (
                   <div>
                     <dt>Technicien(s)</dt>
@@ -370,7 +374,7 @@ export function FNCPage({ role }: { role: string }) {
             <select value={newFnc.workOrderId} onChange={e => setNewFnc(p => ({ ...p, workOrderId: e.target.value }))}>
               <option value="">— Aucun OT —</option>
               {workOrders.map(ot => (
-                <option key={ot.id} value={ot.id}>{ot.id} — {ot.site}, {ot.city}</option>
+                <option key={ot.id} value={ot.id}>{ot.id} · {ot.site} · {ot.city}</option>
               ))}
             </select>
           </div>

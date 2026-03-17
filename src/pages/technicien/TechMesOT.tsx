@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Modal } from '../../components/Modal'
 import {
-  workOrders as initialWorkOrders, retrofitOperations, technicians,
+  workOrders as initialWorkOrders, retrofitOperations, technicians, liftUnits,
   type OpStatus, type OTStatus, type Configuration,
 } from '../../data'
 
@@ -96,7 +96,8 @@ export function TechMesOT({ technicianId }: Props) {
                   <div className="row-main">
                     <div>
                       <p className="row-id">{ot.id}</p>
-                      <h3>{ot.site} — {ot.city}</h3>
+                      <h3>{ot.unitId}</h3>
+                      <p className="op-meta">{ot.site} · {ot.city}</p>
                       <p>{ot.description.slice(0, 70)}…</p>
                     </div>
                     <div className="row-tags">
@@ -121,7 +122,8 @@ export function TechMesOT({ technicianId }: Props) {
               <div className="detail-header">
                 <div>
                   <p className="row-id">{selected.id}</p>
-                  <h3>{selected.site} — {selected.city}</h3>
+                  <h3>{selected.unitId}</h3>
+                  <p className="op-meta">{selected.site} · {selected.city}</p>
                 </div>
                 <span className={`pill ${selected.status === 'en-cours' ? 'warning' : 'neutral'}`}>
                   {otStatusLabel(selected.status)}
@@ -132,6 +134,9 @@ export function TechMesOT({ technicianId }: Props) {
 
               <dl className="detail-grid">
                 <div><dt>Client</dt><dd>{selected.client}</dd></div>
+                <div><dt>Site</dt><dd>{selected.site}</dd></div>
+                <div><dt>Ville</dt><dd>{selected.city}</dd></div>
+                {(() => { const u = liftUnits.find(u => u.id === selected.unitId); return u ? <><div><dt>Partie Fixe</dt><dd>{u.partieFixeId}</dd></div><div><dt>Partie Mobile</dt><dd>{u.partieMobileId}</dd></div></> : null })()}
                 <div><dt>Priorité</dt><dd><span className={`pill ${selected.priority === 'critique' ? 'danger' : selected.priority === 'haute' ? 'watch' : 'neutral'}`}>{selected.priority}</span></dd></div>
                 {selected.fromConfig && (
                   <div>
