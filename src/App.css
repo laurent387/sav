@@ -2161,6 +2161,264 @@
   transition: background 0.15s;
 }
 
+/* ═══════════ Donut Chart ═══════════ */
+.donut-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 16px 0;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.donut-chart {
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.donut-hole {
+  width: 60%;
+  height: 60%;
+  border-radius: 50%;
+  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.donut-hole strong {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+.donut-hole small {
+  font-size: 0.75rem;
+  color: var(--text-soft);
+}
+.donut-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.donut-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+.donut-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ═══════════ Bar Chart ═══════════ */
+.bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 0;
+}
+.bar-chart-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.bar-chart-label {
+  width: 100px;
+  font-size: 0.85rem;
+  text-align: right;
+  flex-shrink: 0;
+  color: var(--text-soft);
+}
+.bar-chart-track {
+  flex: 1;
+  height: 24px;
+  background: rgba(0,0,0,0.04);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.bar-chart-fill {
+  height: 100%;
+  border-radius: 12px;
+  transition: width 0.5s ease;
+  min-width: 4px;
+}
+.bar-chart-value {
+  width: 32px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: left;
+}
+
+/* ═══════════ Table Filters ═══════════ */
+.table-filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.filter-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px 14px;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  font-size: 0.9rem;
+  background: var(--panel);
+  color: var(--text-main);
+  transition: border-color 0.2s;
+}
+.filter-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(43, 127, 255, 0.12);
+}
+.filter-select {
+  padding: 10px 14px;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  font-size: 0.9rem;
+  background: var(--panel);
+  color: var(--text-main);
+  cursor: pointer;
+}
+.filter-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* ═══════════ Export Button ═══════════ */
+.btn-export {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.btn-export:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+/* ═══════════ Notifications ═══════════ */
+.sidebar-notif-area {
+  position: relative;
+  padding: 0 16px;
+  margin-bottom: 8px;
+}
+.sidebar-notif-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s;
+}
+.sidebar-notif-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+.notif-badge {
+  position: absolute;
+  top: 4px;
+  right: 12px;
+  background: #ef4444;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.notif-dropdown {
+  position: absolute;
+  left: 100%;
+  bottom: 0;
+  margin-left: 8px;
+  width: 360px;
+  max-height: 420px;
+  background: var(--panel);
+  border: 1px solid var(--border-strong);
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+  z-index: 1000;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.notif-dropdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.notif-dropdown-header strong {
+  font-size: 0.95rem;
+}
+.notif-count {
+  background: var(--accent);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+.notif-list {
+  overflow-y: auto;
+  max-height: 350px;
+}
+.notif-item {
+  display: flex;
+  gap: 10px;
+  padding: 12px 18px;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+  font-size: 0.85rem;
+  line-height: 1.4;
+  align-items: flex-start;
+}
+.notif-item:last-child {
+  border-bottom: none;
+}
+.notif-item.notif-danger {
+  background: rgba(239, 68, 68, 0.04);
+}
+.notif-item.notif-warning {
+  background: rgba(245, 158, 11, 0.04);
+}
+.notif-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.notif-text {
+  color: var(--text-main);
+}
+.notif-empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-soft);
+}
+
 .history-ot-list {
   display: flex;
   flex-direction: column;

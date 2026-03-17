@@ -1,5 +1,6 @@
-import { type ReactNode } from 'react'
+import { type ReactNode, useState } from 'react'
 import type { User } from '../types/auth'
+import { workOrders, fncs, partsAlerts } from '../data'
 
 interface LayoutProps {
   user: User
@@ -10,7 +11,42 @@ interface LayoutProps {
   children: ReactNode
 }
 
+function buildNotifications() {
+  const notifs: { id: string; icon: string; text: string; type: 'danger' | 'warning' | 'info' }[] = []
+  const today = new Date()
+
+  // OTs en retard (planned date passed, not completed)
+  workOrders.forEach(ot => {
+    if (ot.status !== 'termine' && ot.status !== 'annule') {
+      const planned = new Date(ot.plannedDate)
+      if (planned < today) {
+        notifs.push({ id: `late-${ot.id}`, icon: '🔴', text: `OT ${ot.id} en retard (prévu ${ot.plannedDate}) — ${ot.site}`, type: 'danger' })
+      }
+    }
+  })
+
+  // OTs critiques
+  workOrders.filter(ot => ot.priority === 'critique' && ot.status !== 'termine').forEach(ot => {
+    notifs.push({ id: `crit-${ot.id}`, icon: '🚨', text: `OT critique ${ot.id} — ${ot.description.slice(0, 60)}…`, type: 'danger' })
+  })
+
+  // FNCs ouvertes
+  fncs.filter(f => f.status === 'ouverte').forEach(f => {
+    notifs.push({ id: `fnc-${f.id}`, icon: '⚠️', text: `FNC ${f.id} ouverte — ${f.description.slice(0, 60)}…`, type: 'warning' })
+  })
+
+  // Alertes pièces (stock < min)
+  partsAlerts.forEach(pa => {
+    notifs.push({ id: `part-${pa.id}`, icon: '📦', text: `Stock bas: ${pa.designation} (${pa.stockActuel}/${pa.stockMin}) — ${pa.site}`, type: 'warning' })
+  })
+
+  return notifs
+}
+
 export function DashboardLayout({ user, onLogout, menuItems, activeMenu, onMenuChange, children }: LayoutProps) {
+  const [showNotifs, setShowNotifs] = useState(false)
+  const notifications = buildNotifications()
+  const notifCount = notifications.length
   const roleLabel: Record<string, string> = {
     admin: 'Administrateur',
     'bureau-etude': "Bureau d'Études",
@@ -49,6 +85,33 @@ export function DashboardLayout({ user, onLogout, menuItems, activeMenu, onMenuC
             </button>
           ))}
         </nav>
+
+        <div className="sidebar-notif-area">
+          <button type="button" className="sidebar-notif-btn" onClick={() => setShowNotifs(!showNotifs)}>
+            <span>🔔</span>
+            {notifCount > 0 && <span className="notif-badge">{notifCount}</span>}
+          </button>
+          {showNotifs && (
+            <div className="notif-dropdown">
+              <div className="notif-dropdown-header">
+                <strong>Notifications</strong>
+                <span className="notif-count">{notifCount}</span>
+              </div>
+              {notifications.length === 0 ? (
+                <div className="notif-empty">Aucune notification</div>
+              ) : (
+                <div className="notif-list">
+                  {notifications.map(n => (
+                    <div key={n.id} className={`notif-item notif-${n.type}`}>
+                      <span className="notif-icon">{n.icon}</span>
+                      <span className="notif-text">{n.text}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         <div className="sidebar-user">
           <div className="sidebar-user-info">
