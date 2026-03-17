@@ -84,7 +84,6 @@ export function LoginPage() {
               role="admin"
               label="Admin"
               username="admin"
-              password="admin123"
               onClick={() =>
                 handleQuickLogin({ user: 'admin', pass: 'admin123', role: 'admin' })
               }
@@ -93,7 +92,6 @@ export function LoginPage() {
               role="bureau-etude"
               label="Bureau d'Études"
               username="be@lift.fr"
-              password="be123"
               onClick={() =>
                 handleQuickLogin({ user: 'be@lift.fr', pass: 'be123', role: 'bureau-etude' })
               }
@@ -102,7 +100,6 @@ export function LoginPage() {
               role="logistique"
               label="Logistique"
               username="logistique@lift.fr"
-              password="log123"
               onClick={() =>
                 handleQuickLogin({
                   user: 'logistique@lift.fr',
@@ -115,7 +112,6 @@ export function LoginPage() {
               role="technicien"
               label="Technicien"
               username="tech@lift.fr"
-              password="tech123"
               onClick={() =>
                 handleQuickLogin({ user: 'tech@lift.fr', pass: 'tech123', role: 'technicien' })
               }

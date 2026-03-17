@@ -3,6 +3,6 @@ import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: process.env.GITHUB_ACTIONS ? '/sav/' : '/',
+  base: process.env.GITHUB_ACTIONS ? '/sav/' : '/lift-gmao/',
   plugins: [react()],
 })
