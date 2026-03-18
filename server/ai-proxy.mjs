@@ -17,6 +17,7 @@ const FLOWISE_API_KEY = process.env.FLOWISE_API_KEY || ''
 const LITELLM_BASE_URL = stripTrailingSlash(process.env.LITELLM_BASE_URL || 'http://192.168.1.77:4000')
 const LITELLM_API_KEY = process.env.LITELLM_API_KEY || ''
 const LITELLM_MODEL = process.env.LITELLM_MODEL || 'fast'
+const AI_PROVIDER_TIMEOUT_MS = Number(process.env.AI_PROVIDER_TIMEOUT_MS || 15000)
 const MAX_BODY_SIZE = 1024 * 1024
 
 function stripTrailingSlash(value) {
@@ -78,6 +79,10 @@ function truncateText(value, maxLength = 900) {
   const text = String(value || '').trim()
   if (text.length <= maxLength) return text
   return `${text.slice(0, maxLength).trim()}...`
+}
+
+function uniqueStrings(values) {
+  return [...new Set(values.filter(Boolean).map((value) => String(value).trim()).filter(Boolean))]
 }
 
 async function readJsonBody(request) {
@@ -148,6 +153,128 @@ function buildUnitHistoryPrompt(payload) {
     'NOTES TECHNICIEN :',
     safeNotes || 'Aucune note complementaire.',
   ].join('\n')
+}
+
+function inferUnitHistoryParts(text) {
+  const lowered = String(text || '').toLowerCase()
+  const matches = []
+  const patterns = [
+    ['motorisation z', 'Motorisation Z'],
+    ['partie mobile', 'Partie mobile'],
+    ['partie fixe', 'Partie fixe'],
+    ['fixation', 'Fixations'],
+    ['frein', 'Frein'],
+    ['tambour', 'Tambour'],
+    ['rail', 'Rail'],
+    ['roulement', 'Roulement'],
+    ['chaine', 'Chaine'],
+  ]
+
+  for (const [needle, label] of patterns) {
+    if (lowered.includes(needle)) {
+      matches.push(label)
+    }
+  }
+
+  return uniqueStrings(matches)
+}
+
+function inferUnitHistoryCauses(text) {
+  const lowered = String(text || '').toLowerCase()
+  const causes = []
+
+  if (lowered.includes('vibration') || lowered.includes('vibre')) {
+    causes.push('Jeu mecanique ou alignement a verifier sur les elements en mouvement')
+  }
+  if (lowered.includes('bruit') || lowered.includes('claquement')) {
+    causes.push('Bruit anormal a corréler avec une fixation, un guidage ou un frottement')
+  }
+  if (lowered.includes('fixation') || lowered.includes('serrage')) {
+    causes.push('Desserrage ou maintien insuffisant des fixations')
+  }
+  if (lowered.includes('fnc')) {
+    causes.push('Anomalie deja constatee et non completement soldee')
+  }
+
+  if (!causes.length) {
+    causes.push('Controle mecanique prioritaire a confirmer sur site')
+  }
+
+  return uniqueStrings(causes)
+}
+
+function buildUnitHistoryFallbackStructured(payload) {
+  const safeUnit = normalizeObject(payload.unit) || {}
+  const safeHistory = normalizeArray(payload.history)
+  const safeWorkOrders = normalizeArray(payload.workOrders)
+  const safeDocuments = normalizeArray(payload.documents)
+  const safeNotes = typeof payload.technicianNotes === 'string' ? payload.technicianNotes.trim() : ''
+
+  const latestEvents = [...safeHistory]
+    .filter((event) => event && typeof event === 'object')
+    .sort((left, right) => String(right.date || '').localeCompare(String(left.date || '')))
+    .slice(0, 4)
+
+  const openWorkOrders = safeWorkOrders.filter((workOrder) => {
+    const status = String(workOrder?.status || '')
+    return !['termine', 'annule', 'cancelled', 'closed'].includes(status)
+  })
+
+  const latestEventText = latestEvents
+    .map((event) => [event.title, event.detail].filter(Boolean).join(' - '))
+    .join(' | ')
+
+  const operationChecks = openWorkOrders
+    .flatMap((workOrder) => normalizeArray(workOrder.operations).map((operation) => {
+      const title = operation?.title || operation?.code || operation?.id
+      const status = operation?.status ? ` (${operation.status})` : ''
+      return title ? `${title}${status}` : ''
+    }))
+
+  const parts = uniqueStrings([
+    ...safeDocuments.flatMap((document) => inferUnitHistoryParts(document)),
+    ...inferUnitHistoryParts(latestEventText),
+    ...inferUnitHistoryParts(safeNotes),
+  ])
+
+  const probableCauses = inferUnitHistoryCauses([
+    payload.question,
+    latestEventText,
+    safeNotes,
+    openWorkOrders.map((workOrder) => [workOrder.description, workOrder.notes].filter(Boolean).join(' ')).join(' '),
+  ].join(' '))
+
+  const checks = uniqueStrings([
+    ...operationChecks,
+    safeNotes ? `Valider sur site la note technicien: ${truncateText(safeNotes, 120)}` : '',
+    latestEvents[0]?.detail ? `Recontroler le dernier symptome: ${truncateText(latestEvents[0].detail, 120)}` : '',
+  ]).slice(0, 5)
+
+  const summaryBits = uniqueStrings([
+    safeUnit.id ? `Unite ${safeUnit.id}` : '',
+    latestEvents[0]?.detail ? `dernier symptome: ${truncateText(latestEvents[0].detail, 140)}` : '',
+    openWorkOrders[0]?.description ? `OT en cours: ${truncateText(openWorkOrders[0].description, 140)}` : '',
+  ])
+
+  const recommendedAction = openWorkOrders[0]?.description
+    ? `Prioriser la cloture du controle en cours (${openWorkOrders[0].description}) puis confirmer ou infirmer les causes probables avant remplacement de piece.`
+    : 'Planifier un controle cible sur les organes cites avant toute intervention corrective lourde.'
+
+  const fncDraft = uniqueStrings([
+    safeUnit.id ? `Unite ${safeUnit.id}` : '',
+    latestEvents[0]?.detail || '',
+    safeNotes || '',
+  ]).join(' - ')
+
+  return {
+    summary: summaryBits.join(', ') || 'Aucun historique exploitable n a ete fourni.',
+    probable_causes: probableCauses.slice(0, 4),
+    checks,
+    parts_to_review: parts.slice(0, 5),
+    recommended_action: recommendedAction,
+    fnc_draft: truncateText(fncDraft, 240),
+    confidence: checks.length > 0 ? 'medium' : 'low',
+  }
 }
 
 function buildGammesPrompt(payload, retrieval) {
@@ -267,6 +394,7 @@ async function callFlowise(prompt, sessionId, chatflowId) {
     `${FLOWISE_BASE_URL}/api/v1/prediction/${chatflowId}`,
     {
       method: 'POST',
+      signal: AbortSignal.timeout(AI_PROVIDER_TIMEOUT_MS),
       headers,
       body: JSON.stringify({
         question: prompt,
@@ -301,6 +429,7 @@ async function callLiteLLM(prompt, sessionId) {
     `${LITELLM_BASE_URL}/v1/chat/completions`,
     {
       method: 'POST',
+      signal: AbortSignal.timeout(AI_PROVIDER_TIMEOUT_MS),
       headers,
       body: JSON.stringify({
         model: LITELLM_MODEL,
@@ -384,6 +513,7 @@ const server = createServer(async (request, response) => {
       litellmAuthenticated: Boolean(LITELLM_API_KEY),
       litellmBaseUrl: LITELLM_BASE_URL,
       litellmModel: LITELLM_MODEL,
+      aiProviderTimeoutMs: AI_PROVIDER_TIMEOUT_MS,
       defaultProvider: FLOWISE_CHATFLOW_ID ? 'flowise' : (LITELLM_BASE_URL ? 'litellm' : null),
       gammesOutputDir: DEFAULT_GAMMES_OUTPUT_DIR,
     })
@@ -409,9 +539,23 @@ const server = createServer(async (request, response) => {
           : randomUUID()
 
       const prompt = buildUnitHistoryPrompt(payload)
-      const completion = await generateAnswer(prompt, sessionId, FLOWISE_CHATFLOW_ID)
-      const answer = completion.answer
-      const structured = extractJsonBlock(answer)
+      let completion
+      let answer
+      let structured
+      let warning = null
+
+      try {
+        completion = await generateAnswer(prompt, sessionId, FLOWISE_CHATFLOW_ID)
+        answer = completion.answer
+        structured = extractJsonBlock(answer)
+      } catch (error) {
+        warning = error instanceof Error ? error.message : 'AI provider unavailable'
+        structured = buildUnitHistoryFallbackStructured(payload)
+        answer = JSON.stringify(structured, null, 2)
+        completion = {
+          provider: 'rules-fallback',
+        }
+      }
 
       sendJson(response, 200, {
         ok: true,
@@ -419,6 +563,7 @@ const server = createServer(async (request, response) => {
         provider: completion.provider,
         answer,
         structured,
+        ...(warning ? { warning } : {}),
       })
     } catch (error) {
       sendJson(response, 502, {
