@@ -2,11 +2,14 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import unzipper from 'unzipper'
 import { PDFExtract } from 'pdf.js-extract'
+import { loadProjectEnv } from './load-env.mjs'
 import {
   DEFAULT_GAMMES_OUTPUT_DIR,
   DEFAULT_GAMMES_SOURCE_DIR,
   getGammesOutputPaths,
 } from './gammes-kb.mjs'
+
+loadProjectEnv()
 
 const SUPPORTED_EXTENSIONS = new Set(['.pptx', '.docx', '.xlsx', '.pdf'])
 const pdfExtract = new PDFExtract()

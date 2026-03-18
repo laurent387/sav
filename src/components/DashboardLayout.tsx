@@ -1,4 +1,5 @@
 import { type ReactNode, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { User } from '../types/auth'
 import type { WorkOrder, FNC, PartAlert } from '../data'
 import { useGmaoData } from '../contexts/DataContext'
@@ -93,7 +94,7 @@ export function DashboardLayout({ user, onLogout, menuItems, activeMenu, onMenuC
             <span>🔔</span>
             {notifCount > 0 && <span className="notif-badge">{notifCount}</span>}
           </button>
-          {showNotifs && (
+          {showNotifs && createPortal(
             <>
               <div className="notif-overlay" onClick={() => setShowNotifs(false)} />
               <div className="notif-dropdown">
@@ -114,7 +115,8 @@ export function DashboardLayout({ user, onLogout, menuItems, activeMenu, onMenuC
                 </div>
               )}
               </div>
-            </>
+            </>,
+            document.body
           )}
         </div>
 

@@ -1,9 +1,12 @@
 import { createServer } from 'node:http'
 import { randomUUID } from 'node:crypto'
+import { loadProjectEnv } from './load-env.mjs'
 import {
   DEFAULT_GAMMES_OUTPUT_DIR,
   searchGammesKnowledgeBase,
 } from './gammes-kb.mjs'
+
+loadProjectEnv()
 
 const PORT = Number(process.env.AI_BACKEND_PORT || 8787)
 const ALLOWED_ORIGIN = process.env.AI_BACKEND_ALLOWED_ORIGIN || '*'
@@ -11,6 +14,9 @@ const FLOWISE_BASE_URL = stripTrailingSlash(process.env.FLOWISE_BASE_URL || 'htt
 const FLOWISE_CHATFLOW_ID = process.env.FLOWISE_CHATFLOW_ID || ''
 const FLOWISE_GAMMES_CHATFLOW_ID = process.env.FLOWISE_GAMMES_CHATFLOW_ID || FLOWISE_CHATFLOW_ID
 const FLOWISE_API_KEY = process.env.FLOWISE_API_KEY || ''
+const LITELLM_BASE_URL = stripTrailingSlash(process.env.LITELLM_BASE_URL || 'http://192.168.1.77:4000')
+const LITELLM_API_KEY = process.env.LITELLM_API_KEY || ''
+const LITELLM_MODEL = process.env.LITELLM_MODEL || 'chat'
 const MAX_BODY_SIZE = 1024 * 1024
 
 function stripTrailingSlash(value) {
@@ -66,6 +72,12 @@ function normalizeArray(value) {
 
 function normalizeObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value) ? value : null
+}
+
+function truncateText(value, maxLength = 900) {
+  const text = String(value || '').trim()
+  if (text.length <= maxLength) return text
+  return `${text.slice(0, maxLength).trim()}...`
 }
 
 async function readJsonBody(request) {
@@ -146,7 +158,7 @@ function buildGammesPrompt(payload, retrieval) {
     discipline: chunk.metadata?.discipline,
     configs: chunk.metadata?.configs,
     segment: chunk.segmentLabel,
-    text: chunk.text,
+    text: truncateText(chunk.text),
   }))
 
   return [
@@ -195,6 +207,15 @@ function extractAnswerText(flowisePayload) {
   return JSON.stringify(flowisePayload)
 }
 
+function extractLiteLLMText(payload) {
+  const content = payload?.choices?.[0]?.message?.content
+  if (typeof content === 'string' && content.trim()) {
+    return content
+  }
+
+  return extractAnswerText(payload)
+}
+
 async function callFlowise(prompt, sessionId, chatflowId) {
   if (!chatflowId) {
     throw new Error('Flowise chatflow is not configured')
@@ -233,6 +254,81 @@ async function callFlowise(prompt, sessionId, chatflowId) {
   return parsed
 }
 
+async function callLiteLLM(prompt, sessionId) {
+  const headers = {
+    'Content-Type': 'application/json',
+  }
+
+  if (LITELLM_API_KEY) {
+    headers.Authorization = `Bearer ${LITELLM_API_KEY}`
+  }
+
+  const response = await fetch(
+    `${LITELLM_BASE_URL}/v1/chat/completions`,
+    {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: LITELLM_MODEL,
+        stream: false,
+        temperature: 0.2,
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        metadata: {
+          sessionId,
+          source: 'gmao-ai-proxy',
+        },
+      }),
+    },
+  )
+
+  const raw = await response.text()
+  const parsed = safeJsonParse(raw) ?? raw
+
+  if (!response.ok) {
+    const message = typeof parsed === 'string' ? parsed : JSON.stringify(parsed)
+    throw new Error(`LiteLLM error ${response.status}: ${message}`)
+  }
+
+  return parsed
+}
+
+async function generateAnswer(prompt, sessionId, chatflowId) {
+  let flowiseError = null
+
+  if (chatflowId) {
+    try {
+      const flowisePayload = await callFlowise(prompt, sessionId, chatflowId)
+      return {
+        provider: 'flowise',
+        raw: flowisePayload,
+        answer: extractAnswerText(flowisePayload),
+      }
+    } catch (error) {
+      flowiseError = error
+    }
+  }
+
+  if (LITELLM_BASE_URL) {
+    const litellmPayload = await callLiteLLM(prompt, sessionId)
+    return {
+      provider: flowiseError ? 'litellm-fallback' : 'litellm',
+      raw: litellmPayload,
+      answer: extractLiteLLMText(litellmPayload),
+    }
+  }
+
+  if (flowiseError) {
+    throw flowiseError
+  }
+
+  throw new Error('No AI provider configured. Configure Flowise or LiteLLM.')
+}
+
 const server = createServer(async (request, response) => {
   const requestUrl = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`)
 
@@ -250,6 +346,11 @@ const server = createServer(async (request, response) => {
       flowiseConfigured: Boolean(FLOWISE_CHATFLOW_ID),
       flowiseGammesConfigured: Boolean(FLOWISE_GAMMES_CHATFLOW_ID),
       flowiseBaseUrl: FLOWISE_BASE_URL,
+      litellmConfigured: Boolean(LITELLM_BASE_URL),
+      litellmAuthenticated: Boolean(LITELLM_API_KEY),
+      litellmBaseUrl: LITELLM_BASE_URL,
+      litellmModel: LITELLM_MODEL,
+      defaultProvider: FLOWISE_CHATFLOW_ID ? 'flowise' : (LITELLM_BASE_URL ? 'litellm' : null),
       gammesOutputDir: DEFAULT_GAMMES_OUTPUT_DIR,
     })
     return
@@ -274,13 +375,14 @@ const server = createServer(async (request, response) => {
           : randomUUID()
 
       const prompt = buildUnitHistoryPrompt(payload)
-      const flowisePayload = await callFlowise(prompt, sessionId, FLOWISE_CHATFLOW_ID)
-      const answer = extractAnswerText(flowisePayload)
+      const completion = await generateAnswer(prompt, sessionId, FLOWISE_CHATFLOW_ID)
+      const answer = completion.answer
       const structured = extractJsonBlock(answer)
 
       sendJson(response, 200, {
         ok: true,
         sessionId,
+        provider: completion.provider,
         answer,
         structured,
       })
@@ -355,7 +457,7 @@ const server = createServer(async (request, response) => {
           ? payload.sessionId.trim()
           : randomUUID()
 
-      if (!FLOWISE_GAMMES_CHATFLOW_ID) {
+      if (!FLOWISE_GAMMES_CHATFLOW_ID && !LITELLM_BASE_URL) {
         sendJson(response, 200, {
           ok: true,
           ready: false,
@@ -371,14 +473,15 @@ const server = createServer(async (request, response) => {
       }
 
       const prompt = buildGammesPrompt(payload, retrieval)
-      const flowisePayload = await callFlowise(prompt, sessionId, FLOWISE_GAMMES_CHATFLOW_ID)
-      const answer = extractAnswerText(flowisePayload)
+      const completion = await generateAnswer(prompt, sessionId, FLOWISE_GAMMES_CHATFLOW_ID)
+      const answer = completion.answer
       const structured = extractJsonBlock(answer)
 
       sendJson(response, 200, {
         ok: true,
         ready: true,
         sessionId,
+        provider: completion.provider,
         answer,
         structured,
         documents: retrieval.documents,
@@ -405,5 +508,7 @@ server.listen(PORT, () => {
   console.log(`[ai-proxy] Flowise base URL: ${FLOWISE_BASE_URL}`)
   console.log(`[ai-proxy] Chatflow configured: ${FLOWISE_CHATFLOW_ID ? 'yes' : 'no'}`)
   console.log(`[ai-proxy] Gammes chatflow configured: ${FLOWISE_GAMMES_CHATFLOW_ID ? 'yes' : 'no'}`)
+  console.log(`[ai-proxy] LiteLLM base URL: ${LITELLM_BASE_URL}`)
+  console.log(`[ai-proxy] LiteLLM model: ${LITELLM_MODEL}`)
   console.log(`[ai-proxy] Gammes KB dir: ${DEFAULT_GAMMES_OUTPUT_DIR}`)
 })

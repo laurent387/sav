@@ -1,5 +1,8 @@
 import { spawn } from 'node:child_process'
 import process from 'node:process'
+import { loadProjectEnv } from './load-env.mjs'
+
+loadProjectEnv()
 
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm'
 const children = []

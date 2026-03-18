@@ -13,29 +13,29 @@ Petit backend HTTP pour faire le proxy entre la GMAO, Flowise et la base de conn
 
 ```env
 AI_BACKEND_PORT=8787
-AI_BACKEND_ALLOWED_ORIGIN=http://localhost:5173
+AI_BACKEND_ALLOWED_ORIGIN=*
 FLOWISE_BASE_URL=http://192.168.1.77:3002
 FLOWISE_CHATFLOW_ID=replace-me
 FLOWISE_GAMMES_CHATFLOW_ID=replace-me
 FLOWISE_API_KEY=replace-me
+LITELLM_BASE_URL=http://192.168.1.77:4000
+LITELLM_API_KEY=replace-me
+LITELLM_MODEL=chat
 GAMMES_SOURCE_DIR=e:\Lift\OneDrive_2026-03-16\104_GAMME D'ASSEMBLAGE
 GAMMES_OUTPUT_DIR=e:\Lift\gmao-sav\server\generated\gammes-kb
 VITE_AI_API_BASE_URL=
 VITE_AI_PROXY_TARGET=http://localhost:8787
 ```
 
+Le backend charge automatiquement `.env` et `.env.local` a la racine du projet.
 `VITE_AI_API_BASE_URL` est optionnelle. Si elle est vide, le front appelle `/api/ai/...` sur le meme host.
 En dev Vite, `/api/ai/...` est automatiquement proxyfi vers `VITE_AI_PROXY_TARGET`.
+Si `FLOWISE_CHATFLOW_ID` n'est pas renseigne, le proxy bascule automatiquement sur LiteLLM.
 
 ## Lancement
 
 ```powershell
 Set-Location "e:\Lift\gmao-sav"
-$env:AI_BACKEND_ALLOWED_ORIGIN="http://localhost:5173"
-$env:FLOWISE_BASE_URL="http://192.168.1.77:3002"
-$env:FLOWISE_CHATFLOW_ID="replace-me"
-$env:FLOWISE_GAMMES_CHATFLOW_ID="replace-me"
-$env:FLOWISE_API_KEY="replace-me"
 npm.cmd run ai:server
 ```
 
@@ -43,10 +43,6 @@ Pour lancer le front et le backend IA ensemble en local :
 
 ```powershell
 Set-Location "e:\Lift\gmao-sav"
-$env:FLOWISE_BASE_URL="http://192.168.1.77:3002"
-$env:FLOWISE_CHATFLOW_ID="replace-me"
-$env:FLOWISE_GAMMES_CHATFLOW_ID="replace-me"
-$env:FLOWISE_API_KEY="replace-me"
 npm.cmd run dev:ai
 ```
 
