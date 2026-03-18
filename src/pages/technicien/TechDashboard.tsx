@@ -10,9 +10,10 @@ function configPill(c: Configuration) {
 
 interface Props {
   technicianId: string
+  onNavigateOT?: (id: string) => void
 }
 
-export function TechDashboard({ technicianId }: Props) {
+export function TechDashboard({ technicianId, onNavigateOT }: Props) {
   const { workOrders, technicians, retrofitOperations } = useGmaoData()
   const tech = technicians.find(t => t.id === technicianId)
   const myOTs = workOrders.filter(o => o.technicianIds.includes(technicianId))
@@ -86,7 +87,7 @@ export function TechDashboard({ technicianId }: Props) {
           </div>
           <div className="compact-list">
             {myOps.map(({ ot, op, opDef }) => (
-              <div key={`${ot.id}-${op.operationId}`} className="compact-item">
+              <div key={`${ot.id}-${op.operationId}`} className="compact-item clickable-row" onClick={() => onNavigateOT?.(ot.id)} style={{ cursor: 'pointer' }}>
                 <div>
                   <strong>{opDef?.title ?? op.operationId}</strong>
                   <span className="op-meta">{ot.id} · {ot.site} · {ot.city} · {opDef?.estimatedHours}h</span>
@@ -115,7 +116,7 @@ export function TechDashboard({ technicianId }: Props) {
                 const done = ot.operations.filter(op => op.status === 'fait').length
                 const pct = ot.operations.length > 0 ? Math.round((done / ot.operations.length) * 100) : 0
                 return (
-                  <div key={ot.id} className="compact-item">
+                  <div key={ot.id} className="compact-item clickable-row" onClick={() => onNavigateOT?.(ot.id)} style={{ cursor: 'pointer' }}>
                     <div>
                       <strong>{ot.id}</strong>
                       <span>{ot.site} · {ot.city}</span>
@@ -146,7 +147,7 @@ export function TechDashboard({ technicianId }: Props) {
           ) : (
             <div className="compact-list">
               {plannedOTs.map(ot => (
-                <div key={ot.id} className="compact-item">
+                <div key={ot.id} className="compact-item clickable-row" onClick={() => onNavigateOT?.(ot.id)} style={{ cursor: 'pointer' }}>
                   <div>
                     <strong>{ot.id}</strong>
                     <span>{ot.site} · {ot.city}</span>

@@ -61,7 +61,7 @@ function BarChart({ bars }: { bars: { label: string; value: number; max: number;
   )
 }
 
-export function AdminDashboard() {
+export function AdminDashboard({ onNavigateOT }: { onNavigateOT?: (id: string) => void }) {
   const { liftUnits, workOrders, technicians, fncs, gammes, partsAlerts } = useGmaoData()
   const [period] = useState<'jour' | 'semaine' | 'mois'>('semaine')
   const unitsEnRetrofit = liftUnits.filter(u => u.status === 'en-retrofit').length
@@ -230,7 +230,7 @@ export function AdminDashboard() {
             const done = ot.operations.filter(op => op.status === 'fait').length
             const pct = ot.operations.length > 0 ? Math.round((done / ot.operations.length) * 100) : 0
             return (
-              <div key={ot.id} className="retrofit-unit">
+              <div key={ot.id} className="retrofit-unit clickable-row" onClick={() => onNavigateOT?.(ot.id)} style={{ cursor: 'pointer' }}>
                 <div className="retrofit-unit-header">
                   <strong>{ot.unitId}</strong>
                   <span className="op-meta">{ot.site}</span>

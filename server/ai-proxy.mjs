@@ -6,7 +6,7 @@ import {
   searchGammesKnowledgeBase,
 } from './gammes-kb.mjs'
 
-loadProjectEnv()
+loadProjectEnv({ override: true })
 
 const PORT = Number(process.env.AI_BACKEND_PORT || 8787)
 const ALLOWED_ORIGIN = process.env.AI_BACKEND_ALLOWED_ORIGIN || '*'
@@ -17,8 +17,10 @@ const FLOWISE_API_KEY = process.env.FLOWISE_API_KEY || ''
 const LITELLM_BASE_URL = stripTrailingSlash(process.env.LITELLM_BASE_URL || 'http://192.168.1.77:4000')
 const LITELLM_API_KEY = process.env.LITELLM_API_KEY || ''
 const LITELLM_MODEL = process.env.LITELLM_MODEL || 'fast'
-const AI_PROVIDER_TIMEOUT_MS = Number(process.env.AI_PROVIDER_TIMEOUT_MS || 15000)
+const AI_PROVIDER_TIMEOUT_MS = Number(process.env.AI_PROVIDER_TIMEOUT_MS || 4000)
+const FLOWISE_COOLDOWN_MS = Number(process.env.FLOWISE_COOLDOWN_MS || 5 * 60 * 1000)
 const MAX_BODY_SIZE = 1024 * 1024
+const flowiseCircuitState = new Map()
 
 function stripTrailingSlash(value) {
   return value.replace(/\/+$/, '')
@@ -83,6 +85,41 @@ function truncateText(value, maxLength = 900) {
 
 function uniqueStrings(values) {
   return [...new Set(values.filter(Boolean).map((value) => String(value).trim()).filter(Boolean))]
+}
+
+function getFlowiseCircuit(chatflowId) {
+  if (!chatflowId) return null
+  const current = flowiseCircuitState.get(chatflowId)
+  if (current) return current
+
+  const initial = {
+    disabledUntil: 0,
+    failures: 0,
+    lastError: null,
+  }
+  flowiseCircuitState.set(chatflowId, initial)
+  return initial
+}
+
+function isFlowiseCircuitOpen(chatflowId) {
+  const circuit = getFlowiseCircuit(chatflowId)
+  return Boolean(circuit && circuit.disabledUntil > Date.now())
+}
+
+function markFlowiseSuccess(chatflowId) {
+  const circuit = getFlowiseCircuit(chatflowId)
+  if (!circuit) return
+  circuit.disabledUntil = 0
+  circuit.failures = 0
+  circuit.lastError = null
+}
+
+function markFlowiseFailure(chatflowId, error) {
+  const circuit = getFlowiseCircuit(chatflowId)
+  if (!circuit) return
+  circuit.failures += 1
+  circuit.lastError = error instanceof Error ? error.message : String(error || 'Unknown Flowise error')
+  circuit.disabledUntil = Date.now() + FLOWISE_COOLDOWN_MS
 }
 
 async function readJsonBody(request) {
@@ -381,6 +418,11 @@ async function callFlowise(prompt, sessionId, chatflowId) {
   if (!chatflowId) {
     throw new Error('Flowise chatflow is not configured')
   }
+  if (isFlowiseCircuitOpen(chatflowId)) {
+    const circuit = getFlowiseCircuit(chatflowId)
+    const remainingMs = Math.max(0, circuit.disabledUntil - Date.now())
+    throw new Error(`Flowise temporarily disabled for this chatflow (${Math.ceil(remainingMs / 1000)}s remaining)`)
+  }
 
   const headers = {
     'Content-Type': 'application/json',
@@ -410,9 +452,12 @@ async function callFlowise(prompt, sessionId, chatflowId) {
 
   if (!response.ok) {
     const message = typeof parsed === 'string' ? parsed : JSON.stringify(parsed)
-    throw new Error(`Flowise error ${response.status}: ${message}`)
+    const error = new Error(`Flowise error ${response.status}: ${message}`)
+    markFlowiseFailure(chatflowId, error)
+    throw error
   }
 
+  markFlowiseSuccess(chatflowId)
   return parsed
 }
 
@@ -460,7 +505,8 @@ async function callLiteLLM(prompt, sessionId) {
   return parsed
 }
 
-async function generateAnswer(prompt, sessionId, chatflowId) {
+async function generateAnswer(prompt, sessionId, chatflowId, options = {}) {
+  const allowLiteLLMFallback = options.allowLiteLLMFallback ?? true
   let flowiseError = null
 
   if (chatflowId) {
@@ -472,11 +518,14 @@ async function generateAnswer(prompt, sessionId, chatflowId) {
         answer: extractAnswerText(flowisePayload),
       }
     } catch (error) {
+      if (chatflowId) {
+        markFlowiseFailure(chatflowId, error)
+      }
       flowiseError = error
     }
   }
 
-  if (LITELLM_BASE_URL) {
+  if (allowLiteLLMFallback && LITELLM_BASE_URL) {
     const litellmPayload = await callLiteLLM(prompt, sessionId)
     return {
       provider: flowiseError ? 'litellm-fallback' : 'litellm',
@@ -514,6 +563,11 @@ const server = createServer(async (request, response) => {
       litellmBaseUrl: LITELLM_BASE_URL,
       litellmModel: LITELLM_MODEL,
       aiProviderTimeoutMs: AI_PROVIDER_TIMEOUT_MS,
+      flowiseCooldownMs: FLOWISE_COOLDOWN_MS,
+      flowiseCircuitOpen: {
+        unitHistory: isFlowiseCircuitOpen(FLOWISE_CHATFLOW_ID),
+        gammes: isFlowiseCircuitOpen(FLOWISE_GAMMES_CHATFLOW_ID),
+      },
       defaultProvider: FLOWISE_CHATFLOW_ID ? 'flowise' : (LITELLM_BASE_URL ? 'litellm' : null),
       gammesOutputDir: DEFAULT_GAMMES_OUTPUT_DIR,
     })
@@ -545,7 +599,9 @@ const server = createServer(async (request, response) => {
       let warning = null
 
       try {
-        completion = await generateAnswer(prompt, sessionId, FLOWISE_CHATFLOW_ID)
+        completion = await generateAnswer(prompt, sessionId, FLOWISE_CHATFLOW_ID, {
+          allowLiteLLMFallback: !FLOWISE_CHATFLOW_ID,
+        })
         answer = completion.answer
         structured = extractJsonBlock(answer)
       } catch (error) {
@@ -653,9 +709,25 @@ const server = createServer(async (request, response) => {
       }
 
       const prompt = buildGammesPrompt(payload, retrieval)
-      const completion = await generateAnswer(prompt, sessionId, FLOWISE_GAMMES_CHATFLOW_ID)
-      const answer = completion.answer
-      const structured = extractJsonBlock(answer)
+      let completion
+      let answer
+      let structured
+      let warning = null
+
+      try {
+        completion = await generateAnswer(prompt, sessionId, FLOWISE_GAMMES_CHATFLOW_ID, {
+          allowLiteLLMFallback: !FLOWISE_GAMMES_CHATFLOW_ID,
+        })
+        answer = completion.answer
+        structured = extractJsonBlock(answer)
+      } catch (error) {
+        warning = error instanceof Error ? error.message : 'AI provider unavailable'
+        structured = buildGammesFallbackStructured(payload, retrieval)
+        answer = structured.answer
+        completion = {
+          provider: 'retrieval-fallback',
+        }
+      }
 
       sendJson(response, 200, {
         ok: true,
@@ -667,6 +739,7 @@ const server = createServer(async (request, response) => {
         documents: retrieval.documents,
         chunks: retrieval.chunks,
         manifest: retrieval.manifest,
+        ...(warning ? { warning } : {}),
       })
     } catch (error) {
       sendJson(response, 500, {

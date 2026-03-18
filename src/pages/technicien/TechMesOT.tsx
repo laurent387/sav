@@ -29,9 +29,10 @@ function configPill(c: Configuration) {
 
 interface Props {
   technicianId: string
+  onNavigateOT?: (id: string) => void
 }
 
-export function TechMesOT({ technicianId }: Props) {
+export function TechMesOT({ technicianId, onNavigateOT }: Props) {
   const { workOrders: initialWorkOrders, retrofitOperations, technicians, liftUnits } = useGmaoData()
   const [workOrders, setWorkOrders] = useState(initialWorkOrders)
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -93,7 +94,7 @@ export function TechMesOT({ technicianId }: Props) {
               const doneOps = ot.operations.filter(op => op.status === 'fait').length
               const pct = ot.operations.length > 0 ? Math.round((doneOps / ot.operations.length) * 100) : 0
               return (
-                <button key={ot.id} type="button" className={`intervention-row${ot.id === selected?.id ? ' selected' : ''}`} onClick={() => setSelectedId(ot.id)}>
+                <button key={ot.id} type="button" className={`intervention-row${ot.id === selected?.id ? ' selected' : ''}`} onClick={() => setSelectedId(ot.id)} onDoubleClick={() => onNavigateOT?.(ot.id)}>
                   <div className="row-main">
                     <div>
                       <p className="row-id">{ot.id}</p>
@@ -126,9 +127,12 @@ export function TechMesOT({ technicianId }: Props) {
                   <h3>{selected.unitId}</h3>
                   <p className="op-meta">{selected.site} · {selected.city}</p>
                 </div>
-                <span className={`pill ${selected.status === 'en-cours' ? 'warning' : 'neutral'}`}>
-                  {otStatusLabel(selected.status)}
-                </span>
+                <div className="detail-actions-top">
+                  <button type="button" className="btn-sm primary-action" onClick={() => onNavigateOT?.(selected.id)}>Voir la fiche →</button>
+                  <span className={`pill ${selected.status === 'en-cours' ? 'warning' : 'neutral'}`}>
+                    {otStatusLabel(selected.status)}
+                  </span>
+                </div>
               </div>
 
               <p className="detail-summary">{selected.description}</p>

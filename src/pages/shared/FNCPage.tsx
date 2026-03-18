@@ -32,7 +32,7 @@ interface FNCExtended extends FNC {
   photos?: string[]
 }
 
-export function FNCPage({ role }: { role: string }) {
+export function FNCPage({ role, onNavigateOT, onNavigateFNC }: { role: string; onNavigateOT?: (id: string) => void; onNavigateFNC?: (id: string) => void }) {
   const { fncs, workOrders, liftUnits, technicians, refresh } = useGmaoData()
   const [fncList, setFncList] = useState<FNCExtended[]>(
     fncs.map(f => ({ ...f, severity: (f as any).severity ?? 'Majeure' as Severity, category: (f as any).category ?? 'Vibration' }))
@@ -197,6 +197,7 @@ export function FNCPage({ role }: { role: string }) {
                 key={fnc.id}
                 className="fnc-card"
                 onClick={() => setSelectedFnc(fnc)}
+                onDoubleClick={() => onNavigateFNC?.(fnc.id)}
                 role="button"
                 tabIndex={0}
                 onKeyDown={e => { if (e.key === 'Enter') setSelectedFnc(fnc) }}
@@ -324,6 +325,22 @@ export function FNCPage({ role }: { role: string }) {
 
               {/* Action buttons */}
               <div className="fnc-detail-actions">
+                <button
+                  type="button"
+                  className="btn-sm primary-action"
+                  onClick={() => { setSelectedFnc(null); onNavigateFNC?.(selectedFnc.id) }}
+                >
+                  Voir la fiche complète →
+                </button>
+                {ot && (
+                  <button
+                    type="button"
+                    className="btn-sm secondary-action"
+                    onClick={() => { setSelectedFnc(null); onNavigateOT?.(ot.id) }}
+                  >
+                    🔧 Voir l'OT {ot.id}
+                  </button>
+                )}
                 {selectedFnc.status === 'ouverte' && canEdit && (
                   <>
                     <button

@@ -32,6 +32,8 @@ import { TechGammes } from './pages/technicien/TechGammes'
 
 // Shared pages
 import { FNCPage } from './pages/shared/FNCPage'
+import { OTDetailPage } from './pages/shared/OTDetailPage'
+import { FNCDetailPage } from './pages/shared/FNCDetailPage'
 
 const roleMenus: Record<string, { id: string; label: string; icon: string }[]> = {
   admin: [
@@ -102,15 +104,33 @@ function RoleDashboard({ user, onLogout }: { user: User; onLogout: () => void })
   const menus = roleMenus[user.role] || roleMenus.admin
   const [activeMenu, setActiveMenu] = useState(menus[0]?.id || 'dashboard')
   const [historyUnitId, setHistoryUnitId] = useState<string | null>(null)
+  const [detailView, setDetailView] = useState<{ type: 'ot' | 'fnc'; id: string } | null>(null)
 
   const techId = getTechnicianId(user)
 
   function handleMenuChange(id: string) {
     setActiveMenu(id)
     setHistoryUnitId(null)
+    setDetailView(null)
+  }
+
+  function navigateToOT(id: string) {
+    setDetailView({ type: 'ot', id })
+  }
+
+  function navigateToFNC(id: string) {
+    setDetailView({ type: 'fnc', id })
   }
 
   function renderPage() {
+    // Detail views (cross-role)
+    if (detailView?.type === 'ot') {
+      return <OTDetailPage otId={detailView.id} onBack={() => setDetailView(null)} onNavigateFnc={navigateToFNC} />
+    }
+    if (detailView?.type === 'fnc') {
+      return <FNCDetailPage fncId={detailView.id} onBack={() => setDetailView(null)} onNavigateOT={navigateToOT} />
+    }
+
     if (historyUnitId && user.role === 'admin') {
       return <AdminUnitHistory unitId={historyUnitId} onBack={() => setHistoryUnitId(null)} />
     }
@@ -119,18 +139,18 @@ function RoleDashboard({ user, onLogout }: { user: User; onLogout: () => void })
       case 'admin':
         switch (activeMenu) {
           case 'users': return <AdminUsers />
-          case 'fnc': return <FNCPage role="admin" />
+          case 'fnc': return <FNCPage role="admin" onNavigateOT={navigateToOT} onNavigateFNC={navigateToFNC} />
           case 'reports': return <AdminReports onUnitClick={(id: string) => setHistoryUnitId(id)} />
           case 'config': return <AdminConfig />
-          default: return <AdminDashboard />
+          default: return <AdminDashboard onNavigateOT={navigateToOT} />
         }
       case 'bureau-etude':
         switch (activeMenu) {
-          case 'ordres-travail': return <BEOrdresTravail />
+          case 'ordres-travail': return <BEOrdresTravail onNavigateOT={navigateToOT} />
           case 'gammes': return <BEGammes />
-          case 'fnc': return <FNCPage role="bureau-etude" />
+          case 'fnc': return <FNCPage role="bureau-etude" onNavigateOT={navigateToOT} onNavigateFNC={navigateToFNC} />
           case 'parc': return <BEParc />
-          default: return <BEDashboard />
+          default: return <BEDashboard onNavigateOT={navigateToOT} />
         }
       case 'logistique':
         switch (activeMenu) {
@@ -141,11 +161,11 @@ function RoleDashboard({ user, onLogout }: { user: User; onLogout: () => void })
         }
       case 'technicien':
         switch (activeMenu) {
-          case 'mes-ot': return <TechMesOT technicianId={techId} />
-          case 'fnc': return <FNCPage role="technicien" />
+          case 'mes-ot': return <TechMesOT technicianId={techId} onNavigateOT={navigateToOT} />
+          case 'fnc': return <FNCPage role="technicien" onNavigateOT={navigateToOT} onNavigateFNC={navigateToFNC} />
           case 'rapports': return <TechRapports technicianId={techId} />
           case 'gammes': return <TechGammes />
-          default: return <TechDashboard technicianId={techId} />
+          default: return <TechDashboard technicianId={techId} onNavigateOT={navigateToOT} />
         }
       default:
         return <AdminDashboard />

@@ -35,7 +35,7 @@ function configPill(c: Configuration) {
   return `pill ${map[c]}`
 }
 
-export function BEOrdresTravail() {
+export function BEOrdresTravail({ onNavigateOT }: { onNavigateOT?: (id: string) => void }) {
   const { workOrders, technicians, retrofitOperations, liftUnits, refresh } = useGmaoData()
   const [statusFilter, setStatusFilter] = useState('Tous')
   const [typeFilter, setTypeFilter] = useState('Tous')
@@ -153,7 +153,7 @@ export function BEOrdresTravail() {
             const doneOps = ot.operations.filter(op => op.status === 'fait').length
             const pct = ot.operations.length > 0 ? Math.round((doneOps / ot.operations.length) * 100) : 0
             return (
-              <button key={ot.id} type="button" className={`intervention-row${ot.id === selected?.id ? ' selected' : ''}`} onClick={() => setSelectedId(ot.id)}>
+              <button key={ot.id} type="button" className={`intervention-row${ot.id === selected?.id ? ' selected' : ''}`} onClick={() => setSelectedId(ot.id)} onDoubleClick={() => onNavigateOT?.(ot.id)}>
                 <div className="row-main">
                   <div>
                     <p className="row-id">{ot.id}</p>
@@ -186,6 +186,7 @@ export function BEOrdresTravail() {
                 <p className="op-meta">{selected.site} · {selected.city}</p>
               </div>
               <div className="detail-actions-top">
+                <button type="button" className="btn-sm primary-action" onClick={() => onNavigateOT?.(selected.id)}>Voir la fiche →</button>
                 <select
                   className="status-select"
                   value={selected.status}
