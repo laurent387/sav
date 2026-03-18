@@ -215,7 +215,24 @@ async function handleWorkOrders(req, res, path, method, params) {
         await query('INSERT INTO work_order_technicians (work_order_id, technician_id) VALUES ($1, $2)', [body.id, tid])
       }
     }
+    if (body.operations?.length) {
+      for (const opId of body.operations) {
+        await query('INSERT INTO work_order_operations (work_order_id, operation_id, status) VALUES ($1, $2, $3)', [body.id, opId, 'attente'])
+      }
+    }
     return json(res, 201, rows[0])
+  }
+
+  // PUT /api/orders/:id/operations/:opId
+  const opMatch = path.match(/^\/api\/orders\/([^/]+)\/operations\/([^/]+)$/)
+  if (opMatch && method === 'PUT') {
+    const body = await readBody(req)
+    const [, otId, opId] = opMatch
+    await query(
+      `UPDATE work_order_operations SET status=$1, completed_at=$2 WHERE work_order_id=$3 AND operation_id=$4`,
+      [body.status, body.completedAt, otId, opId]
+    )
+    return json(res, 200, { ok: true })
   }
 
   const match = path.match(/^\/api\/orders\/([^/]+)$/)
@@ -298,15 +315,16 @@ async function handleFncs(req, res, path, method) {
     return json(res, 200, rows.map(r => ({
       id: r.id, workOrderId: r.work_order_id, date: fmtDate(r.date),
       partReference: r.part_reference, description: r.description, status: r.status,
+      severity: r.severity, category: r.category,
     })))
   }
 
   if (path === '/api/fncs' && method === 'POST') {
     const body = await readBody(req)
     const { rows } = await query(
-      `INSERT INTO fncs (id, work_order_id, date, part_reference, description, status)
-       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
-      [body.id, body.workOrderId, body.date, body.partReference, body.description, body.status || 'ouverte']
+      `INSERT INTO fncs (id, work_order_id, date, part_reference, description, status, severity, category)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+      [body.id, body.workOrderId, body.date, body.partReference, body.description, body.status || 'ouverte', body.severity || 'Majeure', body.category || 'Autre']
     )
     return json(res, 201, rows[0])
   }

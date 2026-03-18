@@ -1,9 +1,10 @@
 import { startTransition, useDeferredValue, useState } from 'react'
 import { Modal } from '../../components/Modal'
 import {
-  type WorkOrder, type OTStatus, type OTType, type OTPriority, type OpStatus, type Configuration,
+  type OTStatus, type OTType, type OTPriority, type OpStatus, type Configuration,
 } from '../../data'
 import { useGmaoData } from '../../contexts/DataContext'
+import { ApiService } from '../../services/api'
 
 function otStatusLabel(s: OTStatus) {
   const map: Record<OTStatus, string> = {
@@ -35,8 +36,7 @@ function configPill(c: Configuration) {
 }
 
 export function BEOrdresTravail() {
-  const { workOrders: initialWorkOrders, technicians, retrofitOperations, liftUnits } = useGmaoData()
-  const [workOrders, setWorkOrders] = useState(initialWorkOrders)
+  const { workOrders, technicians, retrofitOperations, liftUnits, refresh } = useGmaoData()
   const [statusFilter, setStatusFilter] = useState('Tous')
   const [typeFilter, setTypeFilter] = useState('Tous')
   const [search, setSearch] = useState('')
@@ -63,11 +63,12 @@ export function BEOrdresTravail() {
 
   const selected = filtered.find(o => o.id === selectedId) ?? filtered[0]
 
-  function handleCreate() {
+  async function handleCreate() {
     if (!newDesc.trim() || !newDate) return
     const unit = liftUnits.find(u => u.id === newUnit)
-    const newOT: WorkOrder = {
-      id: `OT-2026-${String(workOrders.length + 1).padStart(3, '0')}`,
+    const otId = `OT-2026-${String(workOrders.length + 1).padStart(3, '0')}`
+    const payload = {
+      id: otId,
       type: newType,
       status: 'planifie',
       unitId: newUnit,
@@ -78,35 +79,46 @@ export function BEOrdresTravail() {
       plannedDate: newDate,
       fromConfig: newType === 'retrofit' ? unit?.currentConfig : undefined,
       toConfig: newType === 'retrofit' ? (unit?.targetConfig ?? 'H') : undefined,
-      operations: newType === 'retrofit' ? retrofitOperations.map(op => ({ operationId: op.id, status: 'attente' as OpStatus, fncs: [] })) : [],
       technicianIds: newTechs,
       priority: newPriority,
       description: newDesc,
+      operations: newType === 'retrofit' ? retrofitOperations.map(op => op.id) : [],
     }
-    setWorkOrders(prev => [newOT, ...prev])
-    setSelectedId(newOT.id)
+    try {
+      await ApiService.createWorkOrder(payload)
+      await refresh()
+    } catch (err) {
+      console.error('Erreur création OT:', err)
+    }
+    setSelectedId(otId)
     setShowCreate(false)
     setNewDesc('')
     setNewDate('')
     setNewTechs([])
   }
 
-  function updateOpStatus(otId: string, opId: string, newStatus: OpStatus) {
-    setWorkOrders(prev => prev.map(ot => {
-      if (ot.id !== otId) return ot
-      return {
-        ...ot,
-        operations: ot.operations.map(op =>
-          op.operationId === opId ? { ...op, status: newStatus, completedAt: newStatus === 'fait' ? new Date().toISOString().slice(0, 10) : op.completedAt } : op
-        ),
-      }
-    }))
+  async function updateOpStatus(otId: string, opId: string, newStatus: OpStatus) {
+    try {
+      await ApiService.request(`/orders/${otId}/operations/${opId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ status: newStatus, completedAt: newStatus === 'fait' ? new Date().toISOString().slice(0, 10) : null }),
+      })
+      await refresh()
+    } catch (err) {
+      console.error('Erreur màj opération:', err)
+    }
   }
 
-  function updateOTStatus(otId: string, newStatus: OTStatus) {
-    setWorkOrders(prev => prev.map(ot =>
-      ot.id === otId ? { ...ot, status: newStatus, completedDate: newStatus === 'termine' ? new Date().toISOString().slice(0, 10) : ot.completedDate } : ot
-    ))
+  async function updateOTStatus(otId: string, newStatus: OTStatus) {
+    try {
+      await ApiService.updateWorkOrder(otId, {
+        status: newStatus,
+        completedDate: newStatus === 'termine' ? new Date().toISOString().slice(0, 10) : null,
+      })
+      await refresh()
+    } catch (err) {
+      console.error('Erreur màj OT:', err)
+    }
   }
 
   return (

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Modal } from '../../components/Modal'
 import { type FNC } from '../../data'
 import { useGmaoData } from '../../contexts/DataContext'
+import { ApiService } from '../../services/api'
 
 type FncStatus = FNC['status']
 
@@ -32,9 +33,9 @@ interface FNCExtended extends FNC {
 }
 
 export function FNCPage({ role }: { role: string }) {
-  const { fncs: initialFncs, workOrders, liftUnits, technicians } = useGmaoData()
+  const { fncs, workOrders, liftUnits, technicians, refresh } = useGmaoData()
   const [fncList, setFncList] = useState<FNCExtended[]>(
-    initialFncs.map(f => ({ ...f, severity: 'Majeure' as Severity, category: 'Vibration' }))
+    fncs.map(f => ({ ...f, severity: (f as any).severity ?? 'Majeure' as Severity, category: (f as any).category ?? 'Vibration' }))
   )
   const [statusFilter, setStatusFilter] = useState<'Tous' | FncStatus>('Tous')
   const [search, setSearch] = useState('')
@@ -62,12 +63,12 @@ export function FNCPage({ role }: { role: string }) {
   const treatedCount = fncList.filter(f => f.status === 'traitee').length
   const closedCount = fncList.filter(f => f.status === 'cloturee').length
 
-  function createFnc() {
+  async function createFnc() {
     if (!newFnc.description.trim() || !newFnc.partReference.trim()) return
     const id = `FNC-${new Date().getFullYear()}-${String(fncList.length + 1).padStart(3, '0')}`
-    const fnc: FNCExtended = {
+    const payload = {
       id,
-      workOrderId: newFnc.workOrderId || '—',
+      workOrderId: newFnc.workOrderId || null,
       date: new Date().toISOString().slice(0, 10),
       partReference: newFnc.partReference,
       description: newFnc.description,
@@ -75,7 +76,13 @@ export function FNCPage({ role }: { role: string }) {
       severity: newFnc.severity,
       category: newFnc.category,
     }
-    setFncList(prev => [fnc, ...prev])
+    try {
+      await ApiService.createFnc(payload)
+      await refresh()
+      setFncList(prev => [{ ...payload, workOrderId: payload.workOrderId ?? '—' } as FNCExtended, ...prev])
+    } catch (err) {
+      console.error('Erreur création FNC:', err)
+    }
     setShowCreate(false)
     setNewFnc({ workOrderId: '', partReference: '', description: '', severity: 'Majeure', category: categoryOptions[0] })
   }

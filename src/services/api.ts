@@ -150,6 +150,13 @@ export class ApiService {
     return this.request('/fncs')
   }
 
+  public static async createFnc(data: unknown) {
+    return this.request('/fncs', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
   public static async getRetrofitOperations() {
     return this.request('/retrofit-operations')
   }

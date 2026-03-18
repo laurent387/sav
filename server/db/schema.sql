@@ -156,7 +156,9 @@ CREATE TABLE fncs (
   date            DATE NOT NULL,
   part_reference  VARCHAR(100) NOT NULL,
   description     TEXT NOT NULL,
-  status          fnc_status DEFAULT 'ouverte'
+  status          fnc_status DEFAULT 'ouverte',
+  severity        VARCHAR(20),
+  category        VARCHAR(100)
 );
 
 -- Indexes
