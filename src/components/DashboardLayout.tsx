@@ -94,7 +94,9 @@ export function DashboardLayout({ user, onLogout, menuItems, activeMenu, onMenuC
             {notifCount > 0 && <span className="notif-badge">{notifCount}</span>}
           </button>
           {showNotifs && (
-            <div className="notif-dropdown">
+            <>
+              <div className="notif-overlay" onClick={() => setShowNotifs(false)} />
+              <div className="notif-dropdown">
               <div className="notif-dropdown-header">
                 <strong>Notifications</strong>
                 <span className="notif-count">{notifCount}</span>
@@ -111,7 +113,8 @@ export function DashboardLayout({ user, onLogout, menuItems, activeMenu, onMenuC
                   ))}
                 </div>
               )}
-            </div>
+              </div>
+            </>
           )}
         </div>
 

@@ -4,7 +4,11 @@ import {
 } from '../../data'
 import { useGmaoData } from '../../contexts/DataContext'
 
-const AI_API_BASE = 'http://localhost:8787'
+const AI_API_BASE = (import.meta.env.VITE_AI_API_BASE_URL || '').replace(/\/+$/, '')
+
+function getAiApiUrl(path: string) {
+  return AI_API_BASE ? `${AI_API_BASE}${path}` : path
+}
 
 interface AIStructured {
   summary: string
@@ -32,14 +36,29 @@ async function analyzeUnitHistory(payload: {
   documents: string[]
   technicianNotes: string
 }): Promise<AIResponse> {
-  const res = await fetch(`${AI_API_BASE}/api/ai/unit-history/analyze`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  })
+  let res: Response
+
+  try {
+    res = await fetch(getAiApiUrl('/api/ai/unit-history/analyze'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new Error("Le backend IA est injoignable. Lance `npm run ai:server` ou `npm run dev:ai`.")
+    }
+    throw error
+  }
+
   if (!res.ok) {
     const text = await res.text().catch(() => '')
-    throw new Error(text || `Erreur serveur (${res.status})`)
+    try {
+      const parsed = JSON.parse(text) as { error?: string }
+      throw new Error(parsed.error || `Erreur serveur (${res.status})`)
+    } catch {
+      throw new Error(text || `Erreur serveur (${res.status})`)
+    }
   }
   const data: AIResponse = await res.json()
   if (!data.ok) throw new Error(data.answer || 'Réponse invalide du serveur')

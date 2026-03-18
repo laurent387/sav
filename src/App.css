@@ -2349,18 +2349,22 @@
   justify-content: center;
   line-height: 1;
 }
+.notif-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+}
 .notif-dropdown {
-  position: absolute;
-  left: 100%;
-  bottom: 0;
-  margin-left: 8px;
-  width: 360px;
-  max-height: 420px;
+  position: fixed;
+  left: 276px;
+  bottom: 80px;
+  width: 380px;
+  max-height: 480px;
   background: var(--panel);
   border: 1px solid var(--border-strong);
   border-radius: 16px;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.15);
-  z-index: 1000;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.22);
+  z-index: 9999;
   overflow: hidden;
   display: flex;
   flex-direction: column;

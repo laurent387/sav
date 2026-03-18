@@ -20,7 +20,12 @@ FLOWISE_GAMMES_CHATFLOW_ID=replace-me
 FLOWISE_API_KEY=replace-me
 GAMMES_SOURCE_DIR=e:\Lift\OneDrive_2026-03-16\104_GAMME D'ASSEMBLAGE
 GAMMES_OUTPUT_DIR=e:\Lift\gmao-sav\server\generated\gammes-kb
+VITE_AI_API_BASE_URL=
+VITE_AI_PROXY_TARGET=http://localhost:8787
 ```
+
+`VITE_AI_API_BASE_URL` est optionnelle. Si elle est vide, le front appelle `/api/ai/...` sur le meme host.
+En dev Vite, `/api/ai/...` est automatiquement proxyfi vers `VITE_AI_PROXY_TARGET`.
 
 ## Lancement
 
@@ -32,6 +37,17 @@ $env:FLOWISE_CHATFLOW_ID="replace-me"
 $env:FLOWISE_GAMMES_CHATFLOW_ID="replace-me"
 $env:FLOWISE_API_KEY="replace-me"
 npm.cmd run ai:server
+```
+
+Pour lancer le front et le backend IA ensemble en local :
+
+```powershell
+Set-Location "e:\Lift\gmao-sav"
+$env:FLOWISE_BASE_URL="http://192.168.1.77:3002"
+$env:FLOWISE_CHATFLOW_ID="replace-me"
+$env:FLOWISE_GAMMES_CHATFLOW_ID="replace-me"
+$env:FLOWISE_API_KEY="replace-me"
+npm.cmd run dev:ai
 ```
 
 ## Construire la base de connaissance gammes
