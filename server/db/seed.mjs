@@ -56,6 +56,8 @@ async function seed() {
       ['LIFT-004', 'SN-ALST-2022-004', 'ALSTOM', 'Saint-Charles', 'Marseille', 'LF004', 'LF004', 'H',  null,    'operational',     '2022-02-14', '2025-05-08'],
       ['LIFT-005', 'SN-ALST-2020-005', 'ALSTOM', 'Matabiau',     'Toulouse',  'LF005', 'LF005', 'F',  null,    'en-maintenance',  '2020-08-30', '2025-04-22'],
       ['LIFT-006', 'SN-ALST-2023-006', 'ALSTOM', 'Perrache',     'Lyon',      'LF006', 'LF006', 'I',  null,    'operational',     '2023-01-17', '2025-06-01'],
+      ['TR15',     'SN-ALST-TR15',     'ALSTOM', 'Gare de Belfort','Belfort',  'LF-TR15','LF-TR15',"E'", 'H',   'en-maintenance',  '2019-05-15', '2025-12-10'],
+      ['TR18',     'SN-ALST-TR18',     'ALSTOM', 'Gare de Belfort','Belfort',  'LF-TR18','LF-TR18',"E'", 'H',   'en-maintenance',  '2019-09-22', '2025-12-10'],
     ]
     for (const u of units) {
       await client.query(
@@ -75,6 +77,14 @@ async function seed() {
       ['OP-008', 'MOT-R',             'Retrofit Motorisation R',           4,   2, '{Extracteur par inertie,Outillage standard,Clé dynamo}',                         '{Socopac 65h}',                                 "E'", 'H'],
       ['OP-009', 'SRF',               'Retrofit Structure Rivetée Fixe',   1,   1, '{Outillage standard,Perceuse}',                                                 '{}',                                            "E'", 'H'],
       ['OP-010', 'LIN',               'Retrofit Linings',                  2,   2, '{Outillage standard,Perceuse Ø6}',                                              '{Film de protection,Socopac,Stylo à peinture bleue}', "E'", 'H'],
+      ['OP-011', 'HAB-REG',           'Réglage des habillages',            1,   1, '{Clé dynamo 2-10 Nm,Feutre écrit métal}',                                       '{}',                                                  "E'", 'H'],
+      ['OP-012', 'GOUL-CTRL',         'Vérification hauteur goulotte + mise cale', 0.5, 1, '{Réglet,Clé dynamo 5-25 Nm}',                                           '{Cale}',                                              "E'", 'H'],
+      ['OP-013', 'DUB-LIN',           'Modification Dubuis sur lining',    1.5, 1, '{Outillage standard}',                                                          '{}',                                                  "E'", 'H'],
+      ['OP-014', 'BPURG',             'Changement cosse bouton BPURG dans pupitre', 0.5, 1, '{Outillage standard}',                                                  '{}',                                                  "E'", 'H'],
+      ['OP-015', 'MASSE-LIN',         'Changement cosse tresse de masse lining', 0.5, 1, '{Outillage standard}',                                                     '{}',                                                  "E'", 'H'],
+      ['OP-016', 'BAG-MANQ',          'Pose baguettes manquantes',         1,   1, '{Outillage standard}',                                                          '{}',                                                  "E'", 'H'],
+      ['OP-017', 'GOUL-CHG',          'Changement goulotte + cale',        1.5, 1, '{Outillage standard}',                                                          '{Ensemble goulotte,Cale,Visserie ISO 10642 M05x12 A4-80}', "E'", 'H'],
+      ['OP-018', 'SERR-CPL',          'Serrage au couple pignon/couronne', 1,   1, '{Clé spéciale (à définir)}',                                                    '{}',                                                  "E'", 'H'],
     ]
 
     // Steps per operation
@@ -214,6 +224,13 @@ async function seed() {
       ['OP-010', 'Rep 3553',           2, '3553'],
       ['OP-010', 'Rondelle Cs M04',    8, 'ISO_7094'],
       ['OP-010', 'Écrou M04',          8, 'ISO_04032'],
+      ['OP-011', 'Habillages int/ext (paire)', 1, 'HAB-PAIR'],
+      ['OP-012', 'Cale',               1, 'CALE-GOUL'],
+      ['OP-016', 'Baguette',           2, 'HS00001139767'],
+      ['OP-016', 'Baguette',           2, 'HS000011397770'],
+      ['OP-017', 'Ensemble goulotte',  1, 'GOUL-ENS'],
+      ['OP-017', 'Cale goulotte',      1, 'CALE-GOUL'],
+      ['OP-017', 'Visserie ISO 10642 M05x12 A4-80', 10, 'ISO_10642_M05x12'],
     ]
     for (const p of opParts) {
       await client.query(
@@ -226,6 +243,8 @@ async function seed() {
       ['OT-2025-002', 'retrofit',  'planifie',          'LIFT-003', 'ALSTOM', 'Saint-Jean',    'Bordeaux',  '2025-06-15', '2025-08-05', "E'", 'H', 'haute',    "Retrofit CONF E' → CONF H. Planning définitif à confirmer avec ALSTOM Bordeaux — pièces en commande.", null],
       ['OT-2025-003', 'correctif', 'en-cours',          'LIFT-005', 'ALSTOM', 'Matabiau',      'Toulouse',  '2025-06-22', '2025-06-25', null,  null, 'critique', 'Défaut motorisation Z — vibrations anormales au niveau du tambour. Diagnostic en cours, FNC ouverte.', null],
       ['OT-2025-004', 'preventif', 'planifie',          'LIFT-002', 'ALSTOM', 'Part-Dieu',     'Lyon',      '2025-06-20', '2025-07-15', null,  null, 'normale',  'Maintenance préventive semestrielle LIFT-002 CONF G. Vérification galets, bords sensibles et harnais.', null],
+      ['OT-2026-005', 'correctif', 'planifie',          'TR15',     'ALSTOM', 'Gare de Belfort','Belfort',  '2026-03-18', '2026-03-18', "E'", 'H', 'haute',    'Mission Belfort TR15 — 8 opérations : soufflet, bord sensible/demi-lune, habillages, motorisation R, goulotte, Dubuis lining, cosse BPURG, cosse tresse de masse.', 'Mission du 18 au 21 mars 2026.'],
+      ['OT-2026-006', 'correctif', 'planifie',          'TR18',     'ALSTOM', 'Gare de Belfort','Belfort',  '2026-03-18', '2026-03-18', "E'", 'H', 'haute',    'Mission Belfort TR18 — 8 opérations : motorisation R, baguettes manquantes, goulotte tordue, habillages, Dubuis lining, cosse BPURG, cosse tresse de masse, serrage au couple.', 'Mission du 18 au 21 mars 2026. Attention outillage spécial pignon/couronne.'],
     ]
     for (const wo of workOrders) {
       await client.query(
@@ -268,8 +287,30 @@ async function seed() {
     const ot003Ops = [
       ['OT-2025-003', 'OP-003', 'en-cours', 'TECH-01', null, 'Vibration anormale détectée sur tambour — attente expertise motorisation Z'],
     ]
+    // OT-2026-005: TR15 Belfort (8 ops)
+    const otTR15Ops = [
+      ['OT-2026-005', 'OP-004', 'attente', null, null, 'Soufflet à finir d\'installer'],
+      ['OT-2026-005', 'OP-001', 'attente', null, null, 'Frottement bord sensible avec demi-lune'],
+      ['OT-2026-005', 'OP-011', 'attente', null, null, 'Réglage des habillages'],
+      ['OT-2026-005', 'OP-008', 'attente', null, null, 'Motorisation R à changer'],
+      ['OT-2026-005', 'OP-012', 'attente', null, null, 'Vérification hauteur goulotte + mise cale'],
+      ['OT-2026-005', 'OP-013', 'attente', null, null, 'Modification Dubuis sur lining'],
+      ['OT-2026-005', 'OP-014', 'attente', null, null, 'Changement cosse bouton BPURG dans pupitre'],
+      ['OT-2026-005', 'OP-015', 'attente', null, null, 'Changement cosse tresse de masse lining'],
+    ]
+    // OT-2026-006: TR18 Belfort (8 ops)
+    const otTR18Ops = [
+      ['OT-2026-006', 'OP-008', 'attente', null, null, 'Motorisation R à changer'],
+      ['OT-2026-006', 'OP-016', 'attente', null, null, 'Manque 4 baguettes — 2x HS00001139767 + 2x HS000011397770'],
+      ['OT-2026-006', 'OP-017', 'attente', null, null, 'Changement goulotte + cale — goulotte tordue'],
+      ['OT-2026-006', 'OP-011', 'attente', null, null, 'Réglage des habillages'],
+      ['OT-2026-006', 'OP-013', 'attente', null, null, 'Modification Dubuis sur lining'],
+      ['OT-2026-006', 'OP-014', 'attente', null, null, 'Changement cosse bouton BPURG dans pupitre'],
+      ['OT-2026-006', 'OP-015', 'attente', null, null, 'Changement cosse tresse de masse lining'],
+      ['OT-2026-006', 'OP-018', 'attente', null, null, 'Serrage au couple — écrou blocage non accessible avec outillage conventionnel'],
+    ]
 
-    for (const op of [...ot001Ops, ...ot002Ops, ...ot003Ops]) {
+    for (const op of [...ot001Ops, ...ot002Ops, ...ot003Ops, ...otTR15Ops, ...otTR18Ops]) {
       const { rows } = await client.query(
         `INSERT INTO work_order_operations (work_order_id, operation_id, status, technician_id, completed_at, notes)
          VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`, op)
