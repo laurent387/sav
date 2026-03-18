@@ -2360,7 +2360,8 @@
   bottom: 80px;
   width: 380px;
   max-height: 480px;
-  background: var(--panel);
+  background: rgb(255 251 245 / 100%);
+  backdrop-filter: none;
   border: 1px solid var(--border-strong);
   border-radius: 16px;
   box-shadow: 0 12px 40px rgba(0,0,0,0.22);

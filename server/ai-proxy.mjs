@@ -16,7 +16,7 @@ const FLOWISE_GAMMES_CHATFLOW_ID = process.env.FLOWISE_GAMMES_CHATFLOW_ID || FLO
 const FLOWISE_API_KEY = process.env.FLOWISE_API_KEY || ''
 const LITELLM_BASE_URL = stripTrailingSlash(process.env.LITELLM_BASE_URL || 'http://192.168.1.77:4000')
 const LITELLM_API_KEY = process.env.LITELLM_API_KEY || ''
-const LITELLM_MODEL = process.env.LITELLM_MODEL || 'chat'
+const LITELLM_MODEL = process.env.LITELLM_MODEL || 'fast'
 const MAX_BODY_SIZE = 1024 * 1024
 
 function stripTrailingSlash(value) {
@@ -182,6 +182,40 @@ function buildGammesPrompt(payload, retrieval) {
     'EXTRAITS DE GAMMES :',
     JSON.stringify(topChunks, null, 2),
   ].join('\n')
+}
+
+function buildGammesFallbackStructured(payload, retrieval) {
+  const sources = retrieval.documents.slice(0, 5).map((document) => ({
+    title: document.title,
+    path: document.relativePath,
+    configs: document.configs,
+    section: document.section,
+    discipline: document.discipline,
+  }))
+
+  const excerpts = retrieval.chunks.slice(0, 3).map((chunk) => {
+    const source = chunk.metadata?.title || chunk.metadata?.relativePath || chunk.documentId
+    return `[${source} / ${chunk.segmentLabel}] ${truncateText(chunk.text, 260)}`
+  })
+
+  const answer = excerpts.length > 0
+    ? excerpts.join('\n\n')
+    : 'Aucun extrait exploitable n a ete retrouve dans les gammes indexees.'
+
+  const warnings = []
+  if (!retrieval.documents.length) {
+    warnings.push('Aucun document ne correspond aux filtres demandes.')
+  }
+  if (!payload.configuration) {
+    warnings.push('Configuration non precisee : verifier manuellement la compatibilite avant application.')
+  }
+
+  return {
+    answer,
+    sources,
+    warnings,
+    confidence: retrieval.chunks.length > 0 ? 'medium' : 'low',
+  }
 }
 
 function extractAnswerText(flowisePayload) {
@@ -457,17 +491,18 @@ const server = createServer(async (request, response) => {
           ? payload.sessionId.trim()
           : randomUUID()
 
-      if (!FLOWISE_GAMMES_CHATFLOW_ID && !LITELLM_BASE_URL) {
+      if (!FLOWISE_GAMMES_CHATFLOW_ID) {
+        const structured = buildGammesFallbackStructured(payload, retrieval)
         sendJson(response, 200, {
           ok: true,
-          ready: false,
+          ready: true,
           sessionId,
-          answer: null,
-          structured: null,
+          provider: 'retrieval-fallback',
+          answer: structured.answer,
+          structured,
           documents: retrieval.documents,
           chunks: retrieval.chunks,
           manifest: retrieval.manifest,
-          warning: 'FLOWISE_GAMMES_CHATFLOW_ID is not configured',
         })
         return
       }
