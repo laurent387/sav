@@ -6,6 +6,23 @@ const PORT  = Number(process.env.API_PORT || 5000)
 const ORIGIN = process.env.CORS_ORIGIN || '*'
 
 // ─── Helpers ───────────────────────────────────────────
+function parsePgArray(val) {
+  if (!val || val === '{}') return []
+  if (Array.isArray(val)) return val
+  // Strip outer braces and split, handling quoted values
+  const inner = val.slice(1, -1)
+  const result = []
+  let current = '', inQuote = false
+  for (let i = 0; i < inner.length; i++) {
+    const ch = inner[i]
+    if (ch === '"') { inQuote = !inQuote; continue }
+    if (ch === ',' && !inQuote) { result.push(current); current = ''; continue }
+    current += ch
+  }
+  if (current) result.push(current)
+  return result
+}
+
 function cors(res) {
   res.setHeader('Access-Control-Allow-Origin', ORIGIN)
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
@@ -270,7 +287,8 @@ async function handleGammes(req, res, path, method) {
     )
     return json(res, 200, rows.map(r => ({
       id: r.id, title: r.title, section: r.section, discipline: r.discipline,
-      configs: r.configs, category: r.category, revision: r.revision,
+      configs: Array.isArray(r.configs) ? r.configs : parsePgArray(r.configs),
+      category: r.category, revision: r.revision,
       documents: r.documents?.filter(Boolean) || [],
     })))
   }

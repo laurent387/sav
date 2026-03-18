@@ -2,6 +2,8 @@
 
 Petit backend HTTP pour faire le proxy entre la GMAO, Flowise et la base de connaissance des gammes.
 
+Runbook staging Flowise/GPU: `server/FLOWISE_STAGING_RUNBOOK.md`
+
 ## Endpoints
 
 - `GET /health`
@@ -21,7 +23,8 @@ FLOWISE_API_KEY=replace-me
 LITELLM_BASE_URL=http://192.168.1.77:4000
 LITELLM_API_KEY=replace-me
 LITELLM_MODEL=fast
-AI_PROVIDER_TIMEOUT_MS=4000
+AI_PROVIDER_TIMEOUT_MS=10000
+FLOWISE_GAMMES_TIMEOUT_MS=15000
 FLOWISE_COOLDOWN_MS=300000
 GAMMES_SOURCE_DIR=e:\Lift\OneDrive_2026-03-16\104_GAMME D'ASSEMBLAGE
 GAMMES_OUTPUT_DIR=e:\Lift\gmao-sav\server\generated\gammes-kb

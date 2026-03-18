@@ -18,6 +18,7 @@ const LITELLM_BASE_URL = stripTrailingSlash(process.env.LITELLM_BASE_URL || 'htt
 const LITELLM_API_KEY = process.env.LITELLM_API_KEY || ''
 const LITELLM_MODEL = process.env.LITELLM_MODEL || 'fast'
 const AI_PROVIDER_TIMEOUT_MS = Number(process.env.AI_PROVIDER_TIMEOUT_MS || 4000)
+const FLOWISE_GAMMES_TIMEOUT_MS = Number(process.env.FLOWISE_GAMMES_TIMEOUT_MS || Math.max(AI_PROVIDER_TIMEOUT_MS, 15000))
 const FLOWISE_COOLDOWN_MS = Number(process.env.FLOWISE_COOLDOWN_MS || 5 * 60 * 1000)
 const MAX_BODY_SIZE = 1024 * 1024
 const flowiseCircuitState = new Map()
@@ -414,7 +415,7 @@ function extractLiteLLMText(payload) {
   return extractAnswerText(payload)
 }
 
-async function callFlowise(prompt, sessionId, chatflowId) {
+async function callFlowise(prompt, sessionId, chatflowId, timeoutMs = AI_PROVIDER_TIMEOUT_MS) {
   if (!chatflowId) {
     throw new Error('Flowise chatflow is not configured')
   }
@@ -436,7 +437,7 @@ async function callFlowise(prompt, sessionId, chatflowId) {
     `${FLOWISE_BASE_URL}/api/v1/prediction/${chatflowId}`,
     {
       method: 'POST',
-      signal: AbortSignal.timeout(AI_PROVIDER_TIMEOUT_MS),
+      signal: AbortSignal.timeout(timeoutMs),
       headers,
       body: JSON.stringify({
         question: prompt,
@@ -507,11 +508,12 @@ async function callLiteLLM(prompt, sessionId) {
 
 async function generateAnswer(prompt, sessionId, chatflowId, options = {}) {
   const allowLiteLLMFallback = options.allowLiteLLMFallback ?? true
+  const flowiseTimeoutMs = Number(options.flowiseTimeoutMs || AI_PROVIDER_TIMEOUT_MS)
   let flowiseError = null
 
   if (chatflowId) {
     try {
-      const flowisePayload = await callFlowise(prompt, sessionId, chatflowId)
+      const flowisePayload = await callFlowise(prompt, sessionId, chatflowId, flowiseTimeoutMs)
       return {
         provider: 'flowise',
         raw: flowisePayload,
@@ -563,6 +565,7 @@ const server = createServer(async (request, response) => {
       litellmBaseUrl: LITELLM_BASE_URL,
       litellmModel: LITELLM_MODEL,
       aiProviderTimeoutMs: AI_PROVIDER_TIMEOUT_MS,
+      flowiseGammesTimeoutMs: FLOWISE_GAMMES_TIMEOUT_MS,
       flowiseCooldownMs: FLOWISE_COOLDOWN_MS,
       flowiseCircuitOpen: {
         unitHistory: isFlowiseCircuitOpen(FLOWISE_CHATFLOW_ID),
@@ -717,6 +720,7 @@ const server = createServer(async (request, response) => {
       try {
         completion = await generateAnswer(prompt, sessionId, FLOWISE_GAMMES_CHATFLOW_ID, {
           allowLiteLLMFallback: !FLOWISE_GAMMES_CHATFLOW_ID,
+          flowiseTimeoutMs: FLOWISE_GAMMES_TIMEOUT_MS,
         })
         answer = completion.answer
         structured = extractJsonBlock(answer)
