@@ -33,13 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       // Essayer d'abord le serveur réel
-      let response
-      try {
-        response = await ApiService.login({ username, password })
-      } catch {
-        // En cas d'erreur, essayer le mock (fallback pour développement)
-        response = await ApiService.loginMock({ username, password })
-      }
+      const response = await ApiService.login({ username, password })
 
       setUser(response.user)
       setError(null)

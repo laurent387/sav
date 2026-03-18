@@ -5,17 +5,6 @@ import type {
 } from '../data'
 import { ApiService } from '../services/api'
 
-// Fallback static data (used when API is unavailable)
-import {
-  liftUnits as staticLiftUnits,
-  workOrders as staticWorkOrders,
-  technicians as staticTechnicians,
-  gammes as staticGammes,
-  retrofitOperations as staticRetrofitOps,
-  partsAlerts as staticPartsAlerts,
-  fncs as staticFncs,
-} from '../data'
-
 interface GmaoData {
   liftUnits: LiftUnit[]
   workOrders: WorkOrder[]
@@ -32,13 +21,13 @@ interface GmaoData {
 const DataContext = createContext<GmaoData | undefined>(undefined)
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
-  const [liftUnits, setLiftUnits] = useState<LiftUnit[]>(staticLiftUnits)
-  const [workOrders, setWorkOrders] = useState<WorkOrder[]>(staticWorkOrders)
-  const [technicians, setTechnicians] = useState<Technician[]>(staticTechnicians)
-  const [gammes, setGammes] = useState<GammeAssemblage[]>(staticGammes)
-  const [retrofitOperations, setRetrofitOps] = useState<RetrofitOperation[]>(staticRetrofitOps)
-  const [partsAlerts, setPartsAlerts] = useState<PartAlert[]>(staticPartsAlerts)
-  const [fncs, setFncs] = useState<FNC[]>(staticFncs)
+  const [liftUnits, setLiftUnits] = useState<LiftUnit[]>([])
+  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([])
+  const [technicians, setTechnicians] = useState<Technician[]>([])
+  const [gammes, setGammes] = useState<GammeAssemblage[]>([])
+  const [retrofitOperations, setRetrofitOps] = useState<RetrofitOperation[]>([])
+  const [partsAlerts, setPartsAlerts] = useState<PartAlert[]>([])
+  const [fncs, setFncs] = useState<FNC[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -63,8 +52,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       setPartsAlerts(pa)
       setFncs(fn)
     } catch (err) {
-      console.warn('[DataProvider] API indisponible, utilisation des données statiques:', err)
-      setError('API indisponible — données statiques utilisées')
+      console.error('[DataProvider] API indisponible:', err)
+      setError('API indisponible — veuillez réessayer')
     } finally {
       setIsLoading(false)
     }

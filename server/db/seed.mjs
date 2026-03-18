@@ -23,11 +23,11 @@ async function seed() {
 
     // ─── Users ───
     const users = [
-      ['admin',             'admin@lift.fr',        sha256('admin123'),  'Administrateur',    'admin'],
-      ['be@lift.fr',        'be@lift.fr',           sha256('be123'),     'Jean-Pierre Bureau','bureau-etude'],
-      ['logistique@lift.fr','logistique@lift.fr',    sha256('log123'),    'Marie Logistique',  'logistique'],
-      ['tech@lift.fr',      'tech@lift.fr',          sha256('tech123'),   'Ahmed Belkacem',    'technicien'],
-      ['fatima.z@lift.fr',  'fatima.z@lift.fr',      sha256('tech123'),   'Fatima Zari',       'technicien'],
+      ['admin',              'admin@lift.fr',        sha256('LiftGmao@2026!'),  'Laurent Stolidi',    'admin'],
+      ['jp.bureau@lift.fr',  'jp.bureau@lift.fr',    sha256('Bureau@2026!'),    'Jean-Pierre Bureau', 'bureau-etude'],
+      ['m.logistique@lift.fr','m.logistique@lift.fr', sha256('Logistique@2026!'), 'Marie Dupont',      'logistique'],
+      ['a.belkacem@lift.fr', 'a.belkacem@lift.fr',   sha256('Tech@2026!'),      'Ahmed Belkacem',     'technicien'],
+      ['f.zari@lift.fr',    'f.zari@lift.fr',        sha256('Tech@2026!'),      'Fatima Zari',        'technicien'],
     ]
     for (const u of users) {
       await client.query(

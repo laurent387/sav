@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
-import type { UserRole } from '../types/auth'
 import '../styles/LoginPage.css'
 
 export function LoginPage() {
@@ -24,11 +23,6 @@ export function LoginPage() {
       const message = err instanceof Error ? err.message : 'Erreur de connexion'
       setLocalError(message)
     }
-  }
-
-  const handleQuickLogin = (credentials: { user: string; pass: string; role: UserRole }) => {
-    setUsername(credentials.user)
-    setPassword(credentials.pass)
   }
 
   return (
@@ -77,53 +71,9 @@ export function LoginPage() {
             </button>
           </form>
 
-          <div className="login-divider">Comptes de test</div>
-
-          <div className="test-accounts">
-            <TestAccountButton
-              role="admin"
-              label="Admin"
-              username="admin"
-              onClick={() =>
-                handleQuickLogin({ user: 'admin', pass: 'admin123', role: 'admin' })
-              }
-            />
-            <TestAccountButton
-              role="bureau-etude"
-              label="Bureau d'Études"
-              username="be@lift.fr"
-              onClick={() =>
-                handleQuickLogin({ user: 'be@lift.fr', pass: 'be123', role: 'bureau-etude' })
-              }
-            />
-            <TestAccountButton
-              role="logistique"
-              label="Logistique"
-              username="logistique@lift.fr"
-              onClick={() =>
-                handleQuickLogin({
-                  user: 'logistique@lift.fr',
-                  pass: 'log123',
-                  role: 'logistique',
-                })
-              }
-            />
-            <TestAccountButton
-              role="technicien"
-              label="Technicien"
-              username="tech@lift.fr"
-              onClick={() =>
-                handleQuickLogin({ user: 'tech@lift.fr', pass: 'tech123', role: 'technicien' })
-              }
-            />
-          </div>
-
           <div className="login-footer">
-            <p className="text-muted">
-              Serveur: <strong>87.106.26.179</strong>
-            </p>
             <p className="text-muted small">
-              En développement, les comptes de test utilisent des données locales
+              LIFT GMAO &copy; {new Date().getFullYear()}
             </p>
           </div>
         </div>
@@ -149,24 +99,5 @@ export function LoginPage() {
         </div>
       </div>
     </div>
-  )
-}
-
-function TestAccountButton({
-  role,
-  label,
-  username,
-  onClick,
-}: {
-  role: UserRole
-  label: string
-  username: string
-  onClick: () => void
-}) {
-  return (
-    <button className={`test-account-btn role-${role}`} onClick={onClick} type="button">
-      <div className="account-label">{label}</div>
-      <div className="account-creds">{username}</div>
-    </button>
   )
 }
