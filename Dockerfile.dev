@@ -1,0 +1,11 @@
+# Image de développement partagée par les services web (Vite), api et db-init.
+# Le code source est monté en volume par docker-compose.dev.yml : seules les
+# dépendances npm sont installées dans l'image.
+FROM node:22-alpine
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+ENV NODE_ENV=development

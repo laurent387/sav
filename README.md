@@ -41,6 +41,18 @@ Le dataset TypeScript dans src/data.ts inclut:
 
 ## Lancer en local
 
+### Avec Docker (recommandé)
+
+Environnement complet PostgreSQL + API + front en une commande, voir [DEV_DOCKER.md](DEV_DOCKER.md) :
+
+```bash
+docker compose -f docker-compose.dev.yml up --build
+```
+
+Puis ouvrir http://localhost:5173/lift-gmao/
+
+### Sans Docker (front seul)
+
 ```powershell
 Set-Location "e:\Lift\gmao-sav"
 npm.cmd install

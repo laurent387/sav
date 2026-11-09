@@ -1,0 +1,6 @@
+node_modules
+dist
+.git
+server/generated/*
+public/gammes/*.pptx
+*.log
