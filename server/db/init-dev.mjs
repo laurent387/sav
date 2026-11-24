@@ -1,8 +1,8 @@
 // ═══════════════════════════════════════════════════════
 // LIFT GMAO — Initialisation de la base de dev (Docker)
-// Le schéma est appliqué par le conteneur PostgreSQL au premier démarrage
-// (docker-entrypoint-initdb.d). Ce script insère ensuite les données de
-// référence (seed.mjs) puis la mission Belfort, une seule fois.
+// Applique le schéma s'il est absent (base vide, ex. Render), puis insère les
+// données de référence (seed.mjs) et la mission Belfort, une seule fois.
+// Avec Docker, le schéma est déjà appliqué par docker-entrypoint-initdb.d.
 // Run: node server/db/init-dev.mjs
 // ═══════════════════════════════════════════════════════
 import pg from 'pg'
@@ -10,32 +10,36 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
+import { dbConfig } from './pool.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-const config = {
-  host:     process.env.PGHOST     || 'localhost',
-  port:     Number(process.env.PGPORT || 5432),
-  database: process.env.PGDATABASE || 'lift_gmao',
-  user:     process.env.PGUSER     || 'lift',
-  password: process.env.PGPASSWORD || 'lift',
+async function connectWithRetry(retries = 30) {
+  for (let i = 1; ; i++) {
+    const client = new pg.Client(dbConfig)
+    try {
+      await client.connect()
+      return client
+    } catch (err) {
+      await client.end().catch(() => {})
+      if (i >= retries) throw err
+      console.log(`[INIT] Base injoignable (${err.message}), nouvel essai dans 2s...`)
+      await new Promise(r => setTimeout(r, 2000))
+    }
+  }
 }
 
-async function waitForSchema(client, retries = 30) {
-  for (let i = 0; i < retries; i++) {
-    const { rows } = await client.query("SELECT to_regclass('public.users') AS t")
-    if (rows[0].t) return
-    console.log('[INIT] Schéma pas encore prêt, nouvel essai dans 2s...')
-    await new Promise(r => setTimeout(r, 2000))
-  }
-  throw new Error('Schéma introuvable (server/db/schema.sql non appliqué ?)')
+async function ensureSchema(client) {
+  const { rows } = await client.query("SELECT to_regclass('public.users') AS t")
+  if (rows[0].t) return
+  console.log('[INIT] Application du schéma...')
+  await client.query(fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8'))
 }
 
 async function main() {
-  const client = new pg.Client(config)
-  await client.connect()
+  const client = await connectWithRetry()
   try {
-    await waitForSchema(client)
+    await ensureSchema(client)
     const { rows } = await client.query('SELECT COUNT(*)::int AS n FROM users')
     if (rows[0].n > 0) {
       console.log('[INIT] Base déjà initialisée, rien à faire.')

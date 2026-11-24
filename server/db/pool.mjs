@@ -1,12 +1,21 @@
 import pg from 'pg'
 const { Pool } = pg
 
+export const dbConfig = process.env.DATABASE_URL
+  ? {
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.PGSSL === 'true' ? { rejectUnauthorized: false } : undefined,
+    }
+  : {
+      host:     process.env.PGHOST     || 'localhost',
+      port:     Number(process.env.PGPORT || 5432),
+      database: process.env.PGDATABASE || 'lift_gmao',
+      user:     process.env.PGUSER     || 'lift',
+      password: process.env.PGPASSWORD || 'lift',
+    }
+
 const pool = new Pool({
-  host:     process.env.PGHOST     || 'localhost',
-  port:     Number(process.env.PGPORT || 5432),
-  database: process.env.PGDATABASE || 'lift_gmao',
-  user:     process.env.PGUSER     || 'lift',
-  password: process.env.PGPASSWORD || 'lift',
+  ...dbConfig,
   max: 20,
   idleTimeoutMillis: 30000,
 })

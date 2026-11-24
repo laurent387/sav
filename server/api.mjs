@@ -1,8 +1,38 @@
 import { createServer } from 'node:http'
 import { query } from './db/pool.mjs'
 import crypto from 'node:crypto'
+import fs from 'node:fs'
+import nodePath from 'node:path'
 
-const PORT  = Number(process.env.API_PORT || 5000)
+const PORT  = Number(process.env.PORT || process.env.API_PORT || 5000)
+
+// Hébergement tout-en-un (ex. Render) : si STATIC_DIR est défini, l'API sert aussi
+// le front compilé sous APP_BASE, et accepte les appels APP_BASE/api/* comme Nginx en prod.
+const STATIC_DIR = process.env.STATIC_DIR ? nodePath.resolve(process.env.STATIC_DIR) : null
+const APP_BASE = '/lift-gmao'
+const MIME = {
+  '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.svg': 'image/svg+xml',
+  '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.ico': 'image/x-icon',
+  '.woff': 'font/woff', '.woff2': 'font/woff2', '.pdf': 'application/pdf',
+}
+
+function serveStatic(req, res) {
+  const rawPath = decodeURIComponent(new URL(req.url, 'http://localhost').pathname)
+  if (rawPath === '/' || rawPath === APP_BASE) {
+    res.writeHead(302, { Location: `${APP_BASE}/` }); res.end(); return true
+  }
+  if (!rawPath.startsWith(`${APP_BASE}/`)) return false
+  const rel = rawPath.slice(APP_BASE.length)
+  let file = nodePath.join(STATIC_DIR, rel)
+  if (!file.startsWith(STATIC_DIR)) { res.writeHead(403); res.end(); return true }
+  if (!fs.existsSync(file) || fs.statSync(file).isDirectory()) file = nodePath.join(STATIC_DIR, 'index.html')
+  const ext = nodePath.extname(file)
+  const cache = rel.startsWith('/assets/') ? 'public, max-age=31536000, immutable' : 'no-cache'
+  res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': cache })
+  fs.createReadStream(file).pipe(res)
+  return true
+}
 const ORIGIN = process.env.CORS_ORIGIN || '*'
 
 // ─── Helpers ───────────────────────────────────────────
@@ -355,6 +385,9 @@ async function handleFncs(req, res, path, method) {
 const server = createServer(async (req, res) => {
   const method = req.method
   if (method === 'OPTIONS') { cors(res); res.writeHead(204); res.end(); return }
+
+  if (req.url.startsWith(`${APP_BASE}/api/`)) req.url = req.url.slice(APP_BASE.length)
+  else if (STATIC_DIR && (method === 'GET' || method === 'HEAD') && serveStatic(req, res)) return
 
   const { path, params } = parseUrl(req.url)
 

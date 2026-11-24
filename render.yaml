@@ -1,0 +1,26 @@
+# Blueprint Render : base PostgreSQL + service web unique (API Node qui sert aussi le front).
+# Déploiement : Render Dashboard → New → Blueprint → dépôt laurent387/sav.
+databases:
+  - name: lift-gmao-db
+    plan: free
+    databaseName: lift_gmao
+    user: lift
+
+services:
+  - type: web
+    name: lift-gmao
+    runtime: node
+    plan: free
+    branch: claude/eloquent-brown-e2ihwe
+    buildCommand: npm ci && npm run build
+    startCommand: node server/db/init-dev.mjs && node server/api.mjs
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: STATIC_DIR
+        value: dist
+      - key: DATABASE_URL
+        fromDatabase:
+          name: lift-gmao-db
+          property: connectionString

@@ -4,15 +4,10 @@
 // ═══════════════════════════════════════════════════════
 import pg from 'pg'
 import crypto from 'node:crypto'
+import { dbConfig } from './pool.mjs'
 const { Pool } = pg
 
-const pool = new Pool({
-  host:     process.env.PGHOST     || 'localhost',
-  port:     Number(process.env.PGPORT || 5432),
-  database: process.env.PGDATABASE || 'lift_gmao',
-  user:     process.env.PGUSER     || 'lift',
-  password: process.env.PGPASSWORD || 'lift',
-})
+const pool = new Pool(dbConfig)
 
 function sha256(s) { return crypto.createHash('sha256').update(s).digest('hex') }
 
