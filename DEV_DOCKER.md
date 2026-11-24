@@ -111,3 +111,13 @@ Exemple si un PostgreSQL tourne déjà sur l'Optiplex : `DB_PORT=5433 docker com
 - **Le rechargement à chaud ne marche pas** (fréquent sous Windows quand le dépôt est sur `C:\` ou `E:\` plutôt que dans WSL) : lancer avec `VITE_USE_POLLING=true`, ou cloner le dépôt dans le système de fichiers WSL.
 - **`db-init` échoue** : `docker compose -f docker-compose.dev.yml logs db-init`, puis repartir d'une base vierge (`down -v`).
 - **Port déjà utilisé** : changer `WEB_PORT` / `API_PORT` / `DB_PORT` (voir ci-dessus).
+
+## Sans Docker (session cloud Claude Code, Ubuntu)
+
+Si Docker n'est pas disponible mais PostgreSQL 16 et Node sont installés :
+
+```bash
+bash scripts/cloud-dev.sh
+```
+
+Même pile (base + seed + mission Belfort, API en watch, Vite en HMR), relançable sans risque. Pour tout arrêter : `bash scripts/cloud-dev.sh stop`.
