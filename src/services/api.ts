@@ -161,4 +161,45 @@ export class ApiService {
     return this.request('/retrofit-operations')
   }
 
+  // Contrôle géométrique de la rotation
+  public static async getGeoSettings() {
+    return this.request<{ thresholds: { local: number; mean: number } }>('/geo/settings')
+  }
+
+  public static async updateGeoSettings(thresholds: { local: number; mean: number }) {
+    return this.request<{ thresholds: { local: number; mean: number } }>('/geo/settings', {
+      method: 'PUT',
+      body: JSON.stringify(thresholds),
+    })
+  }
+
+  public static async getGeoControls<T>() {
+    return this.request<T>('/geo/controls')
+  }
+
+  public static async getGeoControl<T>(id: number) {
+    return this.request<T>(`/geo/controls/${id}`)
+  }
+
+  public static async createGeoControl<T>(data: { rame: string; unitId?: string; workOrderId?: string; notes?: string }) {
+    return this.request<T>('/geo/controls', { method: 'POST', body: JSON.stringify(data) })
+  }
+
+  public static async updateGeoControl<T>(id: number, data: unknown) {
+    return this.request<T>(`/geo/controls/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+  }
+
+  public static async saveGeoMeasurement<T>(id: number, data: {
+    screw: number; value: number; reason?: string; cleaning?: string[];
+    flagScrews?: number[]; alertStatus?: string; vigilance?: boolean
+  }) {
+    return this.request<T>(`/geo/controls/${id}/measurements`, { method: 'POST', body: JSON.stringify(data) })
+  }
+
+  public static async confirmGeoMeasurement<T>(id: number, screw: number, observation: string) {
+    return this.request<T>(`/geo/controls/${id}/measurements/${screw}/confirm`, {
+      method: 'POST',
+      body: JSON.stringify({ observation }),
+    })
+  }
 }

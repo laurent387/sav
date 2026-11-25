@@ -3,6 +3,7 @@ import { query } from './db/pool.mjs'
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import nodePath from 'node:path'
+import { createGeoHandler } from './geo-routes.mjs'
 
 const PORT  = Number(process.env.PORT || process.env.API_PORT || 5000)
 
@@ -382,6 +383,8 @@ async function handleFncs(req, res, path, method) {
 
 // ─── Server ────────────────────────────────────────────
 
+const handleGeo = createGeoHandler({ query, json, badRequest, readBody, authenticate })
+
 const server = createServer(async (req, res) => {
   const method = req.method
   if (method === 'OPTIONS') { cors(res); res.writeHead(204); res.end(); return }
@@ -402,7 +405,8 @@ const server = createServer(async (req, res) => {
       await handleGammes(req, res, path, method) ??
       await handleRetrofitOps(req, res, path, method) ??
       await handlePartsAlerts(req, res, path, method) ??
-      await handleFncs(req, res, path, method)
+      await handleFncs(req, res, path, method) ??
+      await handleGeo(req, res, path, method)
 
     if (result === null) notFound(res)
   } catch (err) {

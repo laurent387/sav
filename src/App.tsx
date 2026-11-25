@@ -34,12 +34,14 @@ import { TechGammes } from './pages/technicien/TechGammes'
 import { FNCPage } from './pages/shared/FNCPage'
 import { OTDetailPage } from './pages/shared/OTDetailPage'
 import { FNCDetailPage } from './pages/shared/FNCDetailPage'
+import { GeoRotationPage } from './pages/shared/GeoRotationPage'
 
 const roleMenus: Record<string, { id: string; label: string; icon: string }[]> = {
   admin: [
     { id: 'dashboard', label: 'Tableau de bord', icon: '📊' },
     { id: 'users', label: 'Utilisateurs', icon: '👥' },
     { id: 'fnc', label: 'Fiches FNC', icon: '⚠️' },
+    { id: 'geo-rotation', label: 'Contrôle rotation', icon: '🎯' },
     { id: 'reports', label: 'Rapports', icon: '📈' },
     { id: 'config', label: 'Configuration', icon: '⚙️' },
   ],
@@ -48,6 +50,7 @@ const roleMenus: Record<string, { id: string; label: string; icon: string }[]> =
     { id: 'ordres-travail', label: 'Ordres de travail', icon: '📋' },
     { id: 'gammes', label: 'Gammes', icon: '📖' },
     { id: 'fnc', label: 'Fiches FNC', icon: '⚠️' },
+    { id: 'geo-rotation', label: 'Contrôle rotation', icon: '🎯' },
     { id: 'parc', label: 'Parc LIFT', icon: '🏭' },
   ],
   logistique: [
@@ -59,6 +62,7 @@ const roleMenus: Record<string, { id: string; label: string; icon: string }[]> =
   technicien: [
     { id: 'dashboard', label: 'Mon tableau de bord', icon: '🏠' },
     { id: 'mes-ot', label: 'Mes OT', icon: '🔧' },
+    { id: 'geo-rotation', label: 'Contrôle rotation', icon: '🎯' },
     { id: 'fnc', label: 'Fiches FNC', icon: '⚠️' },
     { id: 'rapports', label: 'Rapports', icon: '📝' },
     { id: 'gammes', label: 'Documentation', icon: '📖' },
@@ -140,6 +144,7 @@ function RoleDashboard({ user, onLogout }: { user: User; onLogout: () => void })
         switch (activeMenu) {
           case 'users': return <AdminUsers />
           case 'fnc': return <FNCPage role="admin" onNavigateOT={navigateToOT} onNavigateFNC={navigateToFNC} />
+          case 'geo-rotation': return <GeoRotationPage role={user.role} />
           case 'reports': return <AdminReports onUnitClick={(id: string) => setHistoryUnitId(id)} />
           case 'config': return <AdminConfig />
           default: return <AdminDashboard onNavigateOT={navigateToOT} />
@@ -149,6 +154,7 @@ function RoleDashboard({ user, onLogout }: { user: User; onLogout: () => void })
           case 'ordres-travail': return <BEOrdresTravail onNavigateOT={navigateToOT} />
           case 'gammes': return <BEGammes />
           case 'fnc': return <FNCPage role="bureau-etude" onNavigateOT={navigateToOT} onNavigateFNC={navigateToFNC} />
+          case 'geo-rotation': return <GeoRotationPage role={user.role} />
           case 'parc': return <BEParc />
           default: return <BEDashboard onNavigateOT={navigateToOT} />
         }
@@ -162,6 +168,7 @@ function RoleDashboard({ user, onLogout }: { user: User; onLogout: () => void })
       case 'technicien':
         switch (activeMenu) {
           case 'mes-ot': return <TechMesOT technicianId={techId} onNavigateOT={navigateToOT} />
+          case 'geo-rotation': return <GeoRotationPage role={user.role} />
           case 'fnc': return <FNCPage role="technicien" onNavigateOT={navigateToOT} onNavigateFNC={navigateToFNC} />
           case 'rapports': return <TechRapports technicianId={techId} />
           case 'gammes': return <TechGammes />

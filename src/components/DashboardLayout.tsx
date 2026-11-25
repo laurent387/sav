@@ -57,6 +57,7 @@ function buildNotifications(workOrders: WorkOrder[], fncs: FNC[], partsAlerts: P
 export function DashboardLayout({ user, onLogout, menuItems, activeMenu, onMenuChange, children }: LayoutProps) {
   const { workOrders, fncs, partsAlerts } = useGmaoData()
   const [showNotifs, setShowNotifs] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [dismissed, setDismissed] = useState<Set<string>>(new Set())
   const allNotifications = buildNotifications(workOrders, fncs, partsAlerts, user.role)
   const notifications = allNotifications.filter(n => !dismissed.has(n.id))
@@ -92,7 +93,11 @@ export function DashboardLayout({ user, onLogout, menuItems, activeMenu, onMenuC
 
   return (
     <div className="dashboard-layout">
-      <aside className="sidebar">
+      {/* Menu mobile (écrans < 960 px, où la barre latérale est masquée) */}
+      <button type="button" className="mobile-menu-btn" aria-label="Ouvrir le menu" aria-expanded={mobileMenuOpen}
+        onClick={() => setMobileMenuOpen(o => !o)}>☰</button>
+      {mobileMenuOpen && <div className="mobile-menu-overlay" onClick={() => setMobileMenuOpen(false)} />}
+      <aside className={`sidebar${mobileMenuOpen ? ' open' : ''}`}>
         <div className="sidebar-brand">
           <span className="brand-icon">⬡</span>
           <div>
@@ -107,7 +112,7 @@ export function DashboardLayout({ user, onLogout, menuItems, activeMenu, onMenuC
               key={item.id}
               type="button"
               className={`sidebar-item${activeMenu === item.id ? ' active' : ''}`}
-              onClick={() => onMenuChange(item.id)}
+              onClick={() => { onMenuChange(item.id); setMobileMenuOpen(false) }}
             >
               <span className="sidebar-icon">{item.icon}</span>
               {item.label}

@@ -36,13 +36,24 @@ async function ensureSchema(client) {
   await client.query(fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8'))
 }
 
+// Migrations idempotentes (server/db/migrations/*.sql), appliquées à chaque démarrage.
+async function applyMigrations(client) {
+  const dir = path.join(__dirname, 'migrations')
+  if (!fs.existsSync(dir)) return
+  for (const file of fs.readdirSync(dir).filter(f => f.endsWith('.sql')).sort()) {
+    await client.query(fs.readFileSync(path.join(dir, file), 'utf8'))
+    console.log(`[INIT] Migration ${file} appliquée`)
+  }
+}
+
 async function main() {
   const client = await connectWithRetry()
   try {
     await ensureSchema(client)
     const { rows } = await client.query('SELECT COUNT(*)::int AS n FROM users')
     if (rows[0].n > 0) {
-      console.log('[INIT] Base déjà initialisée, rien à faire.')
+      console.log('[INIT] Données de référence déjà présentes.')
+      await applyMigrations(client)
       return
     }
 
@@ -55,6 +66,7 @@ async function main() {
     await client.query('BEGIN')
     await client.query(sql)
     await client.query('COMMIT')
+    await applyMigrations(client)
     console.log('[INIT] ✓ Base de dev prête')
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {})

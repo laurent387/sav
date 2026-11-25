@@ -15,7 +15,9 @@
     "api:server": "node server/api.mjs",
     "api:server:dev": "node --watch server/api.mjs",
     "db:schema": "psql -d lift_gmao -f server/db/schema.sql",
-    "db:seed": "node server/db/seed.mjs"
+    "db:seed": "node server/db/seed.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "db:init": "node server/db/init-dev.mjs"
   },
   "dependencies": {
     "pdf.js-extract": "^0.2.1",
